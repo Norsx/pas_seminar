@@ -20,7 +20,7 @@ Napisati detaljan seminar o cijelom projektu. **Profesor traži u seminaru:**
 4. kodove.
 
 Druga stranica, odmah iza naslovnice: naslov *GitHub repozitorij cijelog projekta*, link
-`https://github.com/KxHartl/PAS-DUAL-ARM`, zatim *Izradili: Ivan Noršić i Krešimir Hartl*.
+`https://github.com/KxHartl/PAS-DUAL-ARM`, zatim *Izradili: Krešimir Hartl i Ivan Noršić*. Na naslovnici je autor (Student) samo **Ivan Noršić**.
 
 ## Trenutni fokus
 

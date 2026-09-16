@@ -14,7 +14,7 @@ updated: 2026-09-16
 - Profesor traži u seminaru: **slike**, **nacrt arhitekture**, **link na GitHub s lijepim
   README-om** i **kodove**.
 - **Druga stranica** (odmah iza naslovnice): naslov *GitHub repozitorij cijelog projekta*, ispod
-  link **https://github.com/KxHartl/PAS-DUAL-ARM**, ispod *Izradili: Ivan Noršić i Krešimir Hartl*.
+  link **https://github.com/KxHartl/PAS-DUAL-ARM**, ispod *Izradili: Krešimir Hartl i Ivan Noršić* (tim redoslijedom; na naslovnici je autor samo Ivan Noršić).
 - Seminar mora imati **puno slika**. Korisnik daje snimke zaslona iz simulacije (popis u §4.2),
   ostale slike generiramo iz projekta (§4.1).
 - Izvođači kolegija (naslovnica): izv. prof. dr. sc. Marko Švaco (P), doc. dr. sc. Bojan
@@ -108,9 +108,10 @@ iscrta okvir s nazivom datoteke, pa se dokument prevodi i prije nego korisnik pr
 
 ### 4.2 Snimke zaslona od korisnika (K)
 
-Korisnik sprema snimke u **`docs/figures/snimke/`** i sam ih imenuje opisno (ime govori što je na
+Korisnik sprema snimke u **`docs/figures/`** (ili `docs/figures/snimke/`) i sam ih imenuje opisno (ime govori što je na
 slici). Ime u tablici je samo ciljni naziv: pri ubacivanju se snimka prepozna po imenu i sadržaju,
-kopira u `docs/figures/` pod ciljnim imenom, a original ostaje u `snimke/`. ★ = obavezno, ☆ = poželjno.
+koristi pod svojim imenom (ili kopira pod ciljnim). **Neće stići sve** (korisnik): za svaku sliku koja ne
+stigne odluči se ukloniti je ili zamijeniti generiranom — ne ostavljati okvir „SLIKA NEDOSTAJE“ u predaji. ★ = obavezno, ☆ = poželjno.
 
 | ID | Datoteka | Što snimiti | Kako |
 |---|---|---|---|
