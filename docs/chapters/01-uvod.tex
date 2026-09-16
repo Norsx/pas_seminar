@@ -1,2 +1,80 @@
 \section{Uvod}
 \label{sec:01-uvod}
+
+% izvor: data/raw/zadatak/task_caran_2025-11-30.pdf; notes/01_zahtjevi/izvori.md:6-30
+U sklopu kolegija \emph{Projektiranje autonomnih sustava} na Fakultetu strojarstva i
+brodogradnje Sveučilišta u Zagrebu zadan je projekt izrade cjelovitog simulacijskog modela
+dvoručnog mobilnog manipulatora (engl. \emph{dual-arm mobile manipulator}) u okruženju simulatora
+Gazebo \cite{zadatak2025}. Zadatak nalaže integraciju svih ključnih podsustava robota:
+senzora, aktuatora, kinematičkih lanaca i upravljačkih algoritama, s ciljem postizanja
+realističnog kretanja i fizikalne interakcije s okolinom.
+
+% izvor: notes/01_zahtjevi/izvori.md:30-54 (mail 4. 5. 2026.); data/raw/zadatak/mail_img-000.png
+Projektni zadatak konkretiziran je specifikacijom komponenti i scenarija misije \cite{mail2026}.
+Robot se sastoji od četverokotačne omnidirekcijske mobilne baze, torza s dvije neovisne linearne
+vodilice, dviju antropomorfnih robotskih ruku sa sedam stupnjeva slobode gibanja opremljenih
+dvočeljusnim hvataljkama te pan-tilt glave sa senzorskim sustavom (slika~\ref{fig:ciljani-izgled}).
+Cilj misije obuhvaća autonomno mapiranje nepoznatog prostora, odlazak u zadanu regiju (plavu
+sobu), detekciju i dvoručni hvat kutije smještene na stolu, prolazak kroz standardna sobna vrata s
+kutijom u rukama te transport i milimetarski točno odlaganje objekta na označeno mjesto na stolu u
+ciljnoj (crvenoj) sobi.
+
+\slika[0.52\textwidth]{g02_ciljani_izgled.png}{Konceptualni izgled dvoručnog mobilnog manipulatora prema projektnom zadatku \cite{mail2026}}{ciljani-izgled}
+
+% izvor: notes/01_zahtjevi/izvori.md:28,51-53; README.md §8
+Kao obvezni tehnološki stog propisani su operacijski sustav Linux Ubuntu 22.04 LTS s distribucijom
+ROS~2 Humble, fizikalni simulator Gazebo Fortress (Ignition Gazebo 6 LTS), upravljački okvir
+\texttt{ros2\_control}, MoveIt~2 za planiranje manipulacijskih trajektorija te Nav2 i
+\texttt{slam\_toolbox} za mapiranje i navigaciju baze.
+
+% izvor: notes/00_MAPA.md:78-113; notes/01_zahtjevi/izvori.md:55-74
+Zahtjevi projekta formalizirani su u tablici~\ref{tab:zahtjevi}. Svaki zahtjev vezan je uz izvorni
+dokument ([ZAD] ili [MAIL]), podsustav u kojem je riješen te konačni status verifikacije.
+
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setstretch{1.05}
+  \caption{Pregled projektnih zahtjeva (R-01 do R-20), izvora i statusa implementacije}
+  \label{tab:zahtjevi}
+  \begin{tabularx}{\textwidth}{@{}>{\bfseries}l>{\raggedright\arraybackslash}p{6.4cm}cc>{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Oznaka & Zahtjev i specifikacija & Izvor & Status & Rješenje u projektu \\
+    \midrule
+    R-01 & Mobilna baza omnidirekcijskog tipa (PAL omni\_base) & [MAIL] & \checkmark & \texttt{base.urdf.xacro} \\
+    R-02 & Dvije 7-DOF Kinova Gen3 ruke s hvataljkama 2F-85 & [MAIL] & \checkmark & \texttt{kortex\_description} \\
+    R-03 & Torzo s linearnim vodilicama (CAD B. Ćaran) & [MAIL] & \checkmark & \texttt{dual\_arm\_torso} \\
+    R-04 & Pan-tilt glava s RGB-D kamerom RealSense & [MAIL] & \checkmark & \texttt{pan\_tilt\_ros}, D435 \\
+    R-05 & Vizualno i dimenzijsko slaganje s CAD konceptom & [MAIL] & \checkmark & URDF po CAD mjerama \\
+    R-06 & Realistični parametri inercija, masa i trenja & [ZAD] & \checkmark & DART fizikalni parametri \\
+    R-07 & ROS~2 Humble + Gazebo Fortress + \texttt{ros2\_control} & [ZAD] & \checkmark & \texttt{sim.launch.py} \\
+    R-08 & Omnidirekcijski kontroler kretanja baze & [MAIL] & \checkmark & \texttt{mecanum\_drive} \\
+    R-09 & Upravljanje rukama putem okvira MoveIt~2 & [MAIL] & \checkmark & \texttt{moveit\_config} \\
+    R-10 & Simulacijski svijet s tri sobe u obliku slova L & [MAIL] & \checkmark & \texttt{seminar\_world.sdf} \\
+    R-11 & Standardna vrata širine $0{,}90$--$1{,}00$~m (izmjereno $0{,}98$~m) & [MAIL] & \checkmark & Prolazi između soba \\
+    R-12 & Manipulacijski objekt (kocka $0{,}30$~m) s ArUco markerima & [MAIL] & \checkmark & Model \texttt{aruco\_box} \\
+    R-13 & Ciljna lokacija odlaganja sa stolom i markerom & [MAIL] & \checkmark & Crvena soba, marker ID~3 \\
+    R-14 & Autonomno 2D lasersko mapiranje (\texttt{slam\_toolbox}) & [MAIL] & \checkmark & \texttt{mapping.launch.py} \\
+    R-15 & Navigacija po zadanim regijama i sobama (Nav2) & [MAIL] & \checkmark & \texttt{room\_navigator} \\
+    R-16 & Vizualna detekcija kocke u prostoru (RGB-D + ArUco) & [MAIL] & \checkmark & \texttt{aruco\_detector.py} \\
+    R-17 & Dvoručni hvat i podizanje kocke s radnog stola & [MAIL] & \checkmark & Slijed stiska, \texttt{main\_task} \\
+    R-18 & Prolazak praznog robota kroz vrata soba & [MAIL] & \checkmark & Poza \texttt{DRIVE\_V4} \\
+    R-19 & Prolazak robota s podignutom kockom kroz vrata & [MAIL] & \checkmark & Poza \texttt{CARRY\_V4} ($0{,}821$~m) \\
+    R-20 & Precizno odlaganje kocke na ciljni marker & [MAIL] & \checkmark & Slijed spuštanja ($\le 5$~mm) \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+% izvor: notes/07_predaja/plan_seminara.md §3
+Ovaj rad organiziran je u deset poglavlja. Poglavlje~\ref{sec:02-arhitektura} razrađuje programsku i
+sistemsku arhitekturu, tokove podataka, hijerarhiju pokretačkih skripti i međuovisnosti paketa.
+Poglavlje~\ref{sec:03-model-i-okruzenje} prikazuje kinematički model robota, senzorske komponente i
+geometriju simulacijskog svijeta. Poglavlje~\ref{sec:04-upravljanje} detaljno analizira
+\texttt{ros2\_control} konfiguraciju, pogon baze te profile aktuatora ruku. Percepcijski sustav,
+detekcija markera i filtriranje laserskih mjerenja opisani su u poglavlju~\ref{sec:05-percepcija}.
+Poglavlje~\ref{sec:06-navigacija} obrađuje mapiranje, lokalizaciju i navigaciju vođenu potencijalnim
+poljima i grafom soba. Slijed dvoručnog hvata, mehanika stiska i upravljanje u MoveIt~2 prikazani su
+u poglavlju~\ref{sec:07-manipulacija}, a orkestracija cjelokupne autonomne misije u
+poglavlju~\ref{sec:08-misija}. Eksperimentalno izmjereni rezultati, analiza zabilježenih problema i
+preostala ograničenja sažeti su u poglavlju~\ref{sec:09-rezultati}, dok
+poglavlje~\ref{sec:zakljucak} donosi zaključak rada.
