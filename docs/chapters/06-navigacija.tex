@@ -119,8 +119,10 @@ naredbe sa sigurnosnog monitora imaju apsolutni prioritet pred sirovim referenca
 
 % izvor: nav_gui.py:1-180; notes/07_predaja/plan_seminara.md K09
 Za vizualni nadzor i upravljanje misijom razvijen je grafički panel \texttt{nav\_gui} temeljen na
-Python biblioteci Tkinter (slika~\ref{fig:nav-gui}). Panel prikazuje trenutni korak misije (1 do 8),
+Python biblioteci Tkinter (slika~\ref{fig:nav-nadzor-b}). Panel prikazuje trenutni korak misije (1 do 8),
 naziv aktivne prostorije, telemetriju odometrije i status poslužitelja. Glavni gumb „MISIJA: po kutiju“ objavljuje poruku na \texttt{/mission/start}, čime operater odobrava
 početak autonomnog ciklusa nakon što su ruke sigurno sklopljene u transportnu pozu.
 
-\slika[0.55\textwidth]{k09_nav_gui.png}{Nadzorni grafički panel \texttt{nav\_gui} s telemetrijom i gumbom za pokretanje misije}{nav-gui}
+\dvijeslike{k08_rviz_navigacija.png}{Prikaz robota i karte odozgo u okruženju RViz}%
+  {k09_nav_gui.png}{Nadzorni grafički panel \texttt{nav\_gui} za upravljanje misijom}%
+  {Nadzor navigacije: RViz prikaz lokalizacije i grafičko sučelje operatera}{nav-nadzor}

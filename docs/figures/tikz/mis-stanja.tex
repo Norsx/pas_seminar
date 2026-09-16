@@ -2,8 +2,9 @@
 % Sources: src/pas_dual_arm_scripts/pas_dual_arm_scripts/main_task.py
 %   run() 2886-3295 (_report_mission_step 1..8), _place_on_marker 2588-2840, _fail 3330-3338.
 \begin{tikzpicture}[
+    scale=0.96, transform shape,
     font=\scriptsize,
-    st/.style={draw, rounded corners=2pt, fill=blue!4, text width=2.6cm, align=center,
+    st/.style={draw, rounded corners=2pt, fill=blue!4, text width=2.45cm, align=center,
                minimum height=1.25cm, inner sep=2pt},
     ok/.style={st, fill=green!10, draw=green!40!black},
     ab/.style={draw=red!60!black, fill=red!5, rounded corners=2pt, text width=10.6cm,
@@ -13,29 +14,29 @@
   ]
   % top row, left to right
   \node[st] (s0) at (0,0)    {\textbf{0}~~STEP0\\ spoj otpušten,\\ vodilice 0,20~m};
-  \node[st] (s1) at (3.15,0) {\textbf{1}~~Priprema ruku\\ \texttt{DRIVE\_V4} (MoveIt)};
-  \node[st] (s2) at (6.3,0)  {\textbf{2}~~Čekanje naredbe\\ \texttt{/mission/start}};
-  \node[st] (s3) at (9.45,0) {\textbf{3}~~Navigacija do sobe\\ s kockom\\ \texttt{blue:dock}};
-  \node[st] (s4) at (12.6,0) {\textbf{4}~~Percepcija i\\ prilaz kocki};
+  \node[st] (s1) at (3.2,0)  {\textbf{1}~~Priprema ruku\\ \texttt{DRIVE\_V4} (MoveIt)};
+  \node[st] (s2) at (6.4,0)  {\textbf{2}~~Čekanje naredbe\\ \texttt{/mission/start}};
+  \node[st] (s3) at (9.6,0)  {\textbf{3}~~Navigacija do sobe\\ s kockom\\ \texttt{blue:dock}};
+  \node[st] (s4) at (12.8,0) {\textbf{4}~~Percepcija i\\ prilaz kocki};
   % bottom row, right to left
-  \node[st] (s5) at (12.6,-4.4) {\textbf{5}~~Dvoručni hvat\\ i podizanje\\ (STEP3b--STEP7)};
-  \node[st] (s6) at (9.45,-4.4) {\textbf{6}~~Prijenos u sobu\\ za odlaganje\\ \texttt{red:dock}, \texttt{CARRY\_V4}};
-  \node[st] (s7) at (6.3,-4.4)  {\textbf{7}~~Detekcija markera\\ za odlaganje\\ (koraci 1--6)};
-  \node[st] (s8) at (3.15,-4.4) {\textbf{8}~~Odlaganje kocke\\ na marker\\ (koraci 7--11)};
-  \node[ok] (end) at (0,-4.4)   {\texttt{PLACE VERIFIED}\\ \texttt{MISSION COMPLETE}\\ \texttt{state=success}};
+  \node[st] (s5) at (12.8,-4.2) {\textbf{5}~~Dvoručni hvat\\ i podizanje\\ (STEP3b--STEP7)};
+  \node[st] (s6) at (9.6,-4.2)  {\textbf{6}~~Prijenos u sobu\\ za odlaganje\\ \texttt{red:dock}, \texttt{CARRY\_V4}};
+  \node[st] (s7) at (6.4,-4.2)  {\textbf{7}~~Detekcija markera\\ za odlaganje\\ (koraci 1--6)};
+  \node[st] (s8) at (3.2,-4.2)  {\textbf{8}~~Odlaganje kocke\\ na marker\\ (koraci 7--11)};
+  \node[ok] (end) at (0,-4.2)   {\texttt{PLACE VERIFIED}\\ \texttt{MISSION COMPLETE}\\ \texttt{state=success}};
   % abort sink
-  \node[ab] (ab) at (4.75,-2.2) {\textbf{\texttt{\_fail(where)}}: log \texttt{Task aborted during: \ldots},
+  \node[ab] (ab) at (4.8,-2.1) {\textbf{\texttt{\_fail(where)}}: log \texttt{Task aborted during: \ldots},
     \texttt{/mission/task\_status} \texttt{state=aborted}, čvor ne pokreće ništa dalje.
     Iznimke: STEP5d prvo vraća ruke u \texttt{GRASP\_V4}; bez potvrde odspajanja u koraku~8 misija
     staje prije pokreta ruku.};
   % flow
   \draw[flow] (s0) -- (s1);
   \draw[flow] (s1) -- (s2);
-  \draw[flow] (s2) -- node[above, font=\tiny, yshift=5pt] {gumb} (s3);
-  \draw[flow] (s3) -- node[above, font=\tiny, yshift=5pt] {\texttt{arrived}} (s4);
+  \draw[flow] (s2) -- node[above=1pt, font=\fontsize{5.5}{6.5}\selectfont] {gumb} (s3);
+  \draw[flow] (s3) -- node[above=1pt, font=\fontsize{5.5}{6.5}\selectfont\ttfamily] {arrived} (s4);
   \draw[flow] (s4) -- (s5);
-  \draw[flow] (s5) -- node[below, font=\tiny, yshift=-8pt] {\texttt{TASK COMPLETE}} (s6);
-  \draw[flow] (s6) -- node[below, font=\tiny, yshift=-8pt] {\texttt{arrived}} (s7);
+  \draw[flow] (s5) -- node[below=1pt, font=\fontsize{5.5}{6.5}\selectfont\ttfamily] {TASK COMPLETE} (s6);
+  \draw[flow] (s6) -- node[below=1pt, font=\fontsize{5.5}{6.5}\selectfont\ttfamily] {arrived} (s7);
   \draw[flow] (s7) -- (s8);
   \draw[flow] (s8) -- (end);
   % abort branches (state 2 only waits)

@@ -4,8 +4,8 @@
 % izvor: urdf/robot.urdf.xacro:1-490; data/raw/zadatak/torzo_cad_mjere.png; notes/01_zahtjevi/izvori.md:32-40
 Simulacijski model robota objedinjuje kinematičke opise komercijalnih industrijskih komponenti i
 namjenski razvijenih konstrukcijskih sklopova unutar krovne datoteke \texttt{robot.urdf.xacro}.
-Cilj modeliranja bio je postići potpuno slaganje s CAD konceptom (slika~\ref{fig:torzo-cad}) i
-specifikacijom iz projektnog zadatka \cite{mail2026}.
+Cilj modeliranja bio je postići potpuno slaganje s konceptom i specifikacijom iz projektnog
+zadatka \cite{mail2026} (slika~\ref{fig:poza-voznje}).
 
 \subsection{Konstrukcija i komponente robota}
 \label{sec:03-konstrukcija}
@@ -18,11 +18,11 @@ kotača aproksimirana je glatkim valjcima, dok je omnidirekcijsko kretanje ostva
 modelom trenja u DART simulatoru ($\mu = 0{,}80$, $\mu_2 = 0{,}20$, vektor trenja \texttt{fdir1} pod
 $\pm45^\circ$ u odnosu na uzdužnu os baze).
 
-\slika[0.55\textwidth]{g01_torzo_cad_mjere.png}{CAD model torza robota s ugrađenim linearnim vodilicama i kotama \cite{mail2026}}{torzo-cad}
+\slika[0.52\textwidth]{k02_gazebo_poza_voznje.png}{Prikaz robota u simulaciji s linearnim vodilicama torza i rukama u pozi vožnje \texttt{DRIVE\_V4}}{poza-voznje}
 
 % izvor: src/dual_arm_torso/urdf/dual_arm_torso.urdf.xacro:1-85; notes/03_problemi/P-13
-Na gornju plohu baze montiran je torzo robota izrađen prema CAD modelu asistenta B. Ćarana
-\cite{mail2026} (slika~\ref{fig:torzo-cad}). Torzo nosi dvije vertikalne linearne vodilice koje
+Na gornju plohu baze montiran je torzo robota izrađen prema specifikaciji asistenta B. Ćarana
+\cite{mail2026}. Torzo nosi dvije vertikalne linearne vodilice koje
 pomiču klizače ruku preko prizmatičnih zglobova \texttt{torso\_left\_carriage\_joint} i
 \texttt{torso\_right\_carriage\_joint} u rasponu hoda od $0{,}05$ do $\SI{0.65}{m}$. Budući da
 dodatak \texttt{ign\_ros2\_control} na samom donjem graničniku ($0{,}05$~m) poništava izlaznu brzinu
