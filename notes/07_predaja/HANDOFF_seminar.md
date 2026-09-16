@@ -90,20 +90,38 @@ Ostala K-imena iz plana §4.2 su rezervirana mjesta (okviri) dok korisnik ne po�
 — privremeni direktorij; ako nestane, ponovno: `./scripts/run_native.sh python3 scripts/check_zones.py` (i `check_doors.py`,
 `check_map.py src/pas_dual_arm_bringup/maps/seminar_map.yaml`). Rezultat: sve PASS, oba vrata 0,980 m, 3 sobe, 11 stop poza.
 
-## 4. Što je bilo u tijeku u trenutku primopredaje
+## 4. Stanje u trenutku zaustavljanja (korisnik: „stani“, 16. 9. 2026.)
 
-Tri `writer` agenta paralelno (pokrenuti nakon `6414d3e`), svaki commita samo svoje datoteke:
+Sva tri writer agenta su **zaustavljena**; sve što su zapisali je commitano (zadnji `5ff141c`) i pushano na `origin`.
+Dokument se **prevodi bez grešaka** (Tectonic, 18 str.: 6 prednjih + tijelo + literatura/prilozi-stubovi;
+6 okvira „SLIKA NEDOSTAJE“).
 
-| Writer | Datoteke | Budžet | Commit poruka (kako prepoznati da je gotovo) |
-|---|---|---|---|
-| W1 | `01-uvod`, `02-arhitektura`, `03-model-i-okruzenje` + TikZ `docs/figures/tikz/` (nacrt arhitekture G04, launch hijerarhija G05, tlocrt svijeta G08) | 1,5 + 3 + 3,5 str. | `write chapters 1-3 …` |
-| W2 | `04-upravljanje`, `05-percepcija`, `06-navigacija` + TikZ tok naredbi G09 | 1,5 + 1,5 + 3 str. | `write chapters 4-6 …` |
-| W3 | `07-manipulacija`, `08-misija`, `09-rezultati`, `zakljucak`, `prilog-a-pokretanje`, `prilog-b-kod` + TikZ dijagram misije G12; definira oznake ispisa `lst:urdf-kontakt`, `lst:base-controller`, `lst:mission-launch`, `lst:misija-slijed`, `lst:aruco`, `lst:nav-zones`, `lst:room-navigator-gate`, `lst:place-verified` | 2,5 + 2 + 2 + 0,5; A ≤1, B ≤4 | `write chapters 7-9, conclusion and appendices` |
+| Poglavlje | Datoteka | Stanje | Opseg sada / budžet | Napomena za nastavak |
+|---|---|---|---|---|
+| 1 Uvod | `01-uvod.tex` | ❌ stub (samo naslov) | 0 / 1,5 str. | napisati po planu §3 (tablica zahtjeva R-01…R-20) |
+| 2 Arhitektura | `02-arhitektura.tex` | ❌ stub | 0 / 3 str. | **nacrt arhitekture (TikZ G04) — profesor ga traži**; G05 launch, G06 repo |
+| 3 Model i okruženje | `03-model-i-okruzenje.tex` | ❌ stub | 0 / 3,5 str. | tablica senzora, poze, svijet (TikZ G08 + `k03_gazebo_svijet.png`), `sim.launch.py` |
+| 4 Upravljanje | `04-upravljanje.tex` + `figures/tikz/upr-tok-naredbi.tex` | ⚠ napisano, agent ga je **sažimao** kad je zaustavljen | ~2 / 1,5 str. | pročitati, provjeriti da je cjelovito, skratiti na budžet |
+| 5 Percepcija | `05-percepcija.tex` | ❌ stub | 0 / 1,5 str. | — |
+| 6 Navigacija | `06-navigacija.tex` | ❌ stub | 0 / 3 str. | slike `g10_karta.png`, `g11_zone.png`, `k09_nav_gui.png` čekaju |
+| 7 Manipulacija | `07-manipulacija.tex` | ✅ napisano i sažeto (`6e621c2`) | ~3 / 2,5 str. | provjeriti; eventualno malo skratiti |
+| 8 Misija | `08-misija.tex` + `figures/tikz/mis-stanja.tex` | ⚠ napisano (158 redaka), vjerojatno cjelovito; nije sažeto; ispravljena jedna greška `\_place\_on\_marker` | ~4 / 2 str. (s okvirima za slike) | pročitati do kraja, skratiti ~na pola |
+| 9 Rezultati | `09-rezultati.tex` | ❌ stub | 0 / 2 str. | — |
+| Zaključak | `zakljucak.tex` | ❌ stub | 0 / 0,5 str. | — |
+| Prilog A | `prilog-a-pokretanje.tex` | ❌ stub | 0 / ≤1 str. | — |
+| Prilog B | `prilog-b-kod.tex` | ❌ stub | 0 / ≤4 str. | mora definirati oznake `lst:*` (vidi dolje) na koje se 4, 7, 8 već pozivaju |
 
-**Kako provjeriti stanje:** `git log --oneline -15` i `wc -l docs/chapters/*.tex` (stub ima ~2 retka).
-Poglavlje koje je još stub → napisati ga po planu §3 i uputama gore. Uputa writerima je sadržavala: pročitati
-plan cijeli; svaku tvrdnju provjeriti u kodu; iza odlomaka ostaviti `% izvor: putanja:retci`; kartice
-`notes/02_rjesenja/S-*` i `odstupanja.md` su **zastarjele** (vrijedi kod, `00_MAPA.md` 16. 9., `P-45`, M-redovi u `runovi.md`).
+Oznake ispisa koje prilog B mora definirati (poglavlja ih već `\ref`-aju): `lst:urdf-kontakt`,
+`lst:base-controller`, `lst:mission-launch`, `lst:misija-slijed`, `lst:aruco`, `lst:nav-zones`,
+`lst:room-navigator-gate`, `lst:place-verified`.
+
+Uputa koju su writeri dobili (vrijedi i dalje): pročitati plan cijeli; svaku tvrdnju provjeriti u kodu; iza
+odlomaka `% izvor: putanja:retci`; kartice `notes/02_rjesenja/S-*` i `odstupanja.md` su **zastarjele** (vrijedi
+kod, `00_MAPA.md` 16. 9., `P-45`, M-redovi u `runovi.md`); commitati samo svoje putanje nakon svakog potpoglavlja;
+test build u privremenoj kopiji (vidi §2) dok radi više agenata.
+
+**Procjena preostalog:** ~15 od ~20 stranica tijela nije napisano (poglavlja 1, 2, 3, 5, 6, 9, zaključak) +
+oba priloga (~5 str.); poglavlja 4 i 8 treba skratiti, 7 pregledati.
 
 ## 5. Sljedeći koraci (checklista plana §6)
 

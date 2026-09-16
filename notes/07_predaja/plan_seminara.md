@@ -160,9 +160,9 @@ upućuje s `\ref`, kod se ne ponavlja u poglavljima.
 - [x] G01, G02, G10, G11 gotove; G03 izbačena (zahtjevi su tablica); G04–G09, G12 = TikZ, rade writeri
 - [x] Bibliografija `docs/references.bib` (samo izvori iz projekta)
 - [x] Prve snimke korisnika: `k03_gazebo_svijet`, `k09_nav_gui`, `k16_hvat_dizanje`, `k21_odlaganje`
-- [~] `writer`: 1–3 (uvod, arhitektura, model i okruženje)
-- [~] `writer`: 4–6 (upravljanje, percepcija, navigacija)
-- [~] `writer`: 7–10 + prilozi (manipulacija, misija, rezultati, zaključak, pokretanje, kod)
+- [ ] `writer`: 1–3 (uvod, arhitektura, model i okruženje) — nije započeto (zaustavljeno 16. 9.)
+- [~] `writer`: 4–6 — pogl. 4 napisano (skratiti), 5 i 6 nisu započeta
+- [~] `writer`: 7–10 + prilozi — pogl. 7 gotovo, 8 napisano (skratiti), 9, zaključak, prilozi A i B nisu započeti
 - [ ] Build bez grešaka, tijelo ≈ 20 str. (`latex_surgeon` ako treba)
 - [ ] `qa_reviewer` → `docs/REVIEW.md` (svaka tvrdnja ima izvor u projektu; ništa bitno preskočeno)
 - [ ] Ispravci po recenziji
