@@ -1,0 +1,404 @@
+% FSB Seminar — Sveučilište u Zagrebu, Fakultet strojarstva i brodogradnje
+% Template v2.1 — latex_architect popunjava placeholdere iz project.yaml
+% Project adaptations (PAS-DUAL-ARM): three course instructors on the title page,
+% GitHub page after the title page, listings/TikZ/siunitx, figure macros with a
+% placeholder box (\slika, \dvijeslike), list of listings, appendices.
+
+\documentclass[12pt,a4paper]{article}
+
+% --- Encoding, Font & Language (dual-engine) ---
+% Kanonski engine je Tectonic (XeTeX): fontspec + TeX Gyre Termes ima PRAVI
+% OpenType bold pa hrvatski ž/ć/š/đ rade i u \textbf{}. pdfLaTeX fallback koristi
+% newtxtext (vidi gotcha miktex-t1-bold-diacritics). NE newtxmath uz amssymb (\Bbbk konflikt).
+% Monospace: Inconsolata (has a real bold, needed for keywords in code listings).
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{newtxtext}
+  \usepackage[varqu]{zi4}
+\else
+  \usepackage{fontspec}
+  \setmainfont{texgyretermes-regular.otf}[
+    BoldFont       = texgyretermes-bold.otf,
+    ItalicFont     = texgyretermes-italic.otf,
+    BoldItalicFont = texgyretermes-bolditalic.otf
+  ]
+  \setmonofont{Inconsolatazi4-Regular.otf}[
+    BoldFont = Inconsolatazi4-Bold.otf,
+    Scale    = MatchLowercase
+  ]
+\fi
+\usepackage[croatian]{babel}
+
+% --- Layout ---
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Headers & Footers ---
+\usepackage{fancyhdr}
+\setlength{\headheight}{13.6pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape \authorname}
+\fancyhead[R]{\small\itshape \seminartitleshort}
+\fancyfoot[L]{\small\itshape Fakultet strojarstva i brodogradnje}
+\fancyfoot[R]{\small\itshape\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% --- Section Formatting (14pt Bold Uppercase) ---
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\fontsize{14}{17}\bfseries\MakeUppercase}
+  {\thesection.}{0.5em}{}
+\titleformat{\subsection}
+  {\normalfont\fontsize{12}{15}\bfseries}
+  {\thesubsection.}{0.5em}{}
+\titleformat{\subsubsection}
+  {\normalfont\fontsize{12}{15}\bfseries\itshape}
+  {\thesubsubsection.}{0.5em}{}
+\titleformat{\paragraph}[runin]
+  {\normalfont\fontsize{12}{15}\itshape}
+  {}{0em}{}[.]
+
+% --- Figures & Tables ---
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup[figure]{font={small,bf},labelsep=period,position=below}
+\captionsetup[table]{font={small,bf},labelsep=period,position=above}
+\usepackage{subcaption}
+\captionsetup[subfigure]{font=small,labelformat=parens,labelsep=space}
+\usepackage{pdflscape}   % \begin{landscape} ... \end{landscape} for wide figures/tables
+
+% --- Figure/Table numbering by section (Slika 2.1, Tablica 2.1) ---
+\usepackage{chngcntr}
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\counterwithin{equation}{section}
+
+% --- Depth ---
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+
+% --- Croatian names (addto — babel croatian overrida renewcommand) ---
+\addto\captionscroatian{%
+  \renewcommand{\figurename}{Slika}%
+  \renewcommand{\tablename}{Tablica}%
+  \renewcommand{\contentsname}{\normalfont\fontsize{14}{17}\bfseries SADRŽAJ}%
+  \renewcommand{\listfigurename}{\normalfont\fontsize{14}{17}\bfseries POPIS SLIKA}%
+  \renewcommand{\listtablename}{\normalfont\fontsize{14}{17}\bfseries POPIS TABLICA}%
+  \renewcommand{\refname}{\normalfont\fontsize{14}{17}\bfseries LITERATURA}%
+}
+
+% --- References ---
+\usepackage{cite}
+
+% --- Hyperlinks ---
+\usepackage[hidelinks,unicode]{hyperref}
+
+% --- Math ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% --- Color (za upozorenja o nepopunjenim placeholderima) ---
+\usepackage{xcolor}
+
+% --- Units: \SI{0.30}{\metre}, \num{1.5} -> decimal comma ---
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,}}
+
+% --- Diagrams (architecture, launch hierarchy, state machines) ---
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, backgrounds, calc}
+
+% ============================================================
+% CODE LISTINGS
+% ============================================================
+% Usage:
+%   \begin{lstlisting}[style=code-python, caption={...}, label={lst:...}]
+%   ...
+%   \end{lstlisting}
+%   \lstinputlisting[style=code-yaml, firstline=10, lastline=30,
+%                    caption={...}, label={lst:...}]{code/controllers.yaml}
+% Styles:    code (base, default for every listing), code-python, code-xml,
+%            code-yaml, code-bash
+% Languages: Python, XML, bash (built into listings), yaml (defined below)
+% Captions read "Ispis <section>.<n>." and appear in "POPIS ISPISA".
+\usepackage{listings}
+
+\lstdefinelanguage{yaml}{
+  keywords={true, false, null, True, False},
+  sensitive=false,
+  comment=[l]{\#},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinestyle{code}{
+  basicstyle=\footnotesize\ttfamily\setstretch{1},
+  keywordstyle=\color{blue!60!black}\bfseries,
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{red!55!black},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  frame=single,
+  rulecolor=\color{gray!60},
+  backgroundcolor=\color{gray!6},
+  framesep=3pt,
+  framexleftmargin=16pt,
+  xleftmargin=20pt,
+  xrightmargin=4pt,
+  breaklines=true,
+  breakatwhitespace=false,
+  postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  upquote=true,
+  captionpos=t,
+  aboveskip=\medskipamount,
+  belowskip=\medskipamount,
+  extendedchars=true
+}
+
+% Croatian letters inside listings.
+% pdfLaTeX: multi-byte UTF-8 input needs `literate` replacements.
+% XeTeX/LuaTeX (Tectonic): listings only puts characters 0-255 into its char
+% table, so letters such as č (U+010D) bypass it and get typeset out of order
+% ("ačb" -> "čab") and without the comment/string colour; `literate` does not
+% help there. Registering them as letters in the char table fixes both.
+\makeatletter
+\ifPDFTeX
+  \lstset{literate={č}{{\v{c}}}1 {ć}{{\'c}}1 {ž}{{\v{z}}}1 {š}{{\v{s}}}1 {đ}{{\dj}}1
+                   {Č}{{\v{C}}}1 {Ć}{{\'C}}1 {Ž}{{\v{Z}}}1 {Š}{{\v{S}}}1 {Đ}{{\DJ}}1}
+\else
+  \def\pas@lstUnicodeLetter#1{%
+    \lst@ifactivechars\catcode`#1=\active\fi
+    \begingroup\lccode`\~=`#1\lccode`\/=`#1%
+    \lowercase{\endgroup\def~{\lst@ProcessLetter/}}}
+  \lst@AddToHook{SelectCharTable}{%
+    \pas@lstUnicodeLetter č\pas@lstUnicodeLetter ć\pas@lstUnicodeLetter ž%
+    \pas@lstUnicodeLetter š\pas@lstUnicodeLetter đ\pas@lstUnicodeLetter Č%
+    \pas@lstUnicodeLetter Ć\pas@lstUnicodeLetter Ž\pas@lstUnicodeLetter Š%
+    \pas@lstUnicodeLetter Đ}
+\fi
+\makeatother
+
+\lstdefinestyle{code-python}{
+  style=code,
+  language=Python,
+  morekeywords={as, assert, async, await, nonlocal, with, yield, True, False, None}
+}
+\lstdefinestyle{code-xml}{
+  style=code,
+  language=XML,
+  tagstyle=\color{blue!60!black}
+}
+\lstdefinestyle{code-yaml}{
+  style=code,
+  language=yaml
+}
+\lstdefinestyle{code-bash}{
+  style=code,
+  language=bash
+}
+\lstset{style=code}
+
+\captionsetup[lstlisting]{font={small,bf},labelsep=period}
+\AtBeginDocument{\counterwithin{lstlisting}{section}}
+\addto\captionscroatian{%
+  \renewcommand{\lstlistingname}{Ispis}%
+  \renewcommand{\lstlistlistingname}{\normalfont\fontsize{14}{17}\bfseries POPIS ISPISA}%
+}
+
+% --- Paragraph spacing ---
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+% --- Spriječavanje razdvajanja riječi (Justify bez hifenacije) ---
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\tolerance=10000
+\hbadness=10000
+\emergencystretch=\maxdimen
+
+% ============================================================
+% FIGURE MACROS WITH A PLACEHOLDER BOX
+% ============================================================
+% Images live in docs/figures/. If the file does not exist yet, a framed box
+% with "SLIKA NEDOSTAJE: <file>" is drawn instead (and a warning goes to the
+% log), so the document compiles before all screenshots are delivered.
+% The file may be given with an extension (g01_x.png) or without one
+% (.pdf, .png, .jpg are tried). The width is an upper bound: images are also
+% capped in height and keep their aspect ratio.
+%
+% \slika[<width>]{<file in figures/>}{<caption>}{<label>}
+%   width   default 0.8\textwidth; max height 0.45\textheight
+%   label   written as fig:<label>  -> \ref{fig:<label>}
+%   placeholder box: <width> x 5cm
+%   e.g.  \slika{g01_torzo_cad_mjere.png}{CAD model torza s mjerama}{torzo-cad}
+%         \slika[0.5\textwidth]{k02_gazebo_poza_voznje.png}{Poza vožnje}{poza-voznje}
+%
+% \dvijeslike[<widthA>][<widthB>]{<fileA>}{<captionA>}{<fileB>}{<captionB>}{<common caption>}{<label>}
+%   widthA  default 0.48\textwidth; widthB defaults to widthA
+%   max height 0.35\textheight per image; placeholder box: <width> x 4cm
+%   labels  fig:<label> (whole figure), fig:<label>-a and fig:<label>-b (subfigures)
+%   e.g.  \dvijeslike{k13_hvat_detekcija.png}{Detekcija}%
+%                    {k14_hvat_prilaz.png}{Prilaz}{Početak hvata}{hvat-pocetak}
+%         \dvijeslike[0.40\textwidth][0.56\textwidth]{a.png}{A}{b.png}{B}{A i B}{ab}
+
+% \pasIfFigureExists{<file>}{<true>}{<false>}
+\newcommand{\pasIfFigureExists}[3]{%
+  \IfFileExists{figures/#1}{#2}{%
+    \IfFileExists{figures/#1.pdf}{#2}{%
+      \IfFileExists{figures/#1.png}{#2}{%
+        \IfFileExists{figures/#1.jpg}{#2}{#3}}}}%
+}
+
+% \pasFigureOrBox{<file>}{<width>}{<max height>}{<placeholder height>}
+\newcommand{\pasFigureOrBox}[4]{%
+  \pasIfFigureExists{#1}%
+    {\includegraphics[width=#2,height=#3,keepaspectratio]{#1}}%
+    {\typeout{WARNING: missing figure figures/\detokenize{#1} (placeholder box drawn)}%
+     \fbox{\parbox[c][#4][c]{\dimexpr #2-2\fboxsep-2\fboxrule\relax}{%
+       \centering\normalfont\small
+       \textcolor{red!70!black}{\textbf{SLIKA NEDOSTAJE:}}\\
+       \texttt{\detokenize{#1}}}}}%
+}
+
+\NewDocumentCommand{\slika}{O{0.8\textwidth} m m m}{%
+  \begin{figure}[H]%
+    \centering
+    \pasFigureOrBox{#2}{#1}{0.45\textheight}{5cm}%
+    \caption{#3}%
+    \label{fig:#4}%
+  \end{figure}%
+}
+
+\NewDocumentCommand{\dvijeslike}{O{0.48\textwidth} O{#1} m m m m m m}{%
+  \begin{figure}[H]%
+    \centering
+    \begin{subfigure}[b]{#1}%
+      \centering
+      \pasFigureOrBox{#3}{\linewidth}{0.35\textheight}{4cm}%
+      \caption{#4}%
+      \label{fig:#8-a}%
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{#2}%
+      \centering
+      \pasFigureOrBox{#5}{\linewidth}{0.35\textheight}{4cm}%
+      \caption{#6}%
+      \label{fig:#8-b}%
+    \end{subfigure}%
+    \caption{#7}%
+    \label{fig:#8}%
+  \end{figure}%
+}
+
+% ============================================================
+% DOCUMENT METADATA — latex_architect popunjava iz project.yaml
+% ============================================================
+\newcommand{\univname}{SVEUČILIŠTE U ZAGREBU}
+\newcommand{\facultyname}{FAKULTET STROJARSTVA I BRODOGRADNJE}
+\newcommand{\coursename}{PROJEKTIRANJE AUTONOMNIH SUSTAVA}
+\newcommand{\seminartitle}{Projektiranje i simulacija dvoručnog mobilnog manipulatora za manipulaciju objektima u prostoru}
+\newcommand{\seminartitleshort}{PAS — Dvoručni mobilni manipulator}
+% Course instructors, one per line (title page). \newline, not \\, inside the p-cell.
+\newcommand{\professorlabel}{Izvođači kolegija:}
+\newcommand{\professorname}{%
+  \textbf{izv. prof. dr. sc. Marko Švaco}\newline
+  \textbf{doc. dr. sc. Bojan Šekoranja}\newline
+  \textbf{Branimir Ćaran, mag. ing. mech.}}
+\newcommand{\authorname}{Ivan Noršić}
+\newcommand{\locationdate}{Zagreb, 2026.}
+\newcommand{\repourl}{\url{https://github.com/KxHartl/PAS-DUAL-ARM}}
+
+% ============================================================
+\begin{document}
+
+% The title page and page 2 get no hyperref page anchors: their page numbers
+% would clash with the Roman/arabic numbering that restarts afterwards.
+\hypersetup{pageanchor=false}
+
+% ---- TITLE PAGE ----
+\begin{titlepage}
+  \centering
+  {\fontsize{14}{17}\selectfont \univname \par}
+  {\fontsize{14}{17}\selectfont \facultyname \par}
+  \vfill
+  {\fontsize{28}{34}\bfseries \coursename \par}
+  \vspace{0.8cm}
+  {\fontsize{14}{18}\bfseries \seminartitle \par}
+  \vfill
+  % Tabular: lijevo "Izvođači kolegija:" / bold imena — desno "Student:" / bold ime
+  % \textmd i \textbf (ne \bfseries/\normalfont — ne rade pouzdano u p{} ćelijama)
+  \begin{tabular}{>{\raggedright\arraybackslash}p{0.5\textwidth}>{\raggedleft\arraybackslash}p{0.4\textwidth}}
+    \textmd{\professorlabel} & \textmd{Student:} \\[0.3cm]
+    \professorname & \textbf{\authorname}
+  \end{tabular}
+  \vspace{1.5cm}
+  \par
+  {\normalfont \locationdate \par}
+\end{titlepage}
+
+% ---- PAGE 2: GITHUB REPOSITORY (no header/footer, no page number) ----
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+  {\fontsize{16}{20}\selectfont\bfseries GitHub repozitorij cijelog projekta\par}
+  \vspace{1cm}
+  {\Large \repourl\par}
+  \vspace{1cm}
+  {\large Izradili: \textbf{Ivan Noršić i Krešimir Hartl}\par}
+\end{center}
+\vspace*{\fill}
+\clearpage
+\hypersetup{pageanchor=true}
+
+% ---- FRONTMATTER (rimske stranice velikim slovima: I, II, III) ----
+\pagenumbering{Roman}
+\setcounter{page}{1}
+
+\tableofcontents
+\clearpage
+\listoffigures\clearpage
+\listoftables\clearpage
+\lstlistoflistings\clearpage
+
+% ---- BODY (arapske stranice) ----
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{chapters/01-uvod}
+\input{chapters/02-arhitektura}
+\input{chapters/03-model-i-okruzenje}
+\input{chapters/04-upravljanje}
+\input{chapters/05-percepcija}
+\input{chapters/06-navigacija}
+\input{chapters/07-manipulacija}
+\input{chapters/08-misija}
+\input{chapters/09-rezultati}
+\input{chapters/zakljucak}
+
+% ---- LITERATURA ----
+\clearpage
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+% ---- PRILOZI (iza literature) ----
+\clearpage
+\appendix
+\input{chapters/prilog-a-pokretanje}
+\input{chapters/prilog-b-kod}
+
+\end{document}
