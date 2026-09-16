@@ -37,7 +37,8 @@ updated: 2026-09-16
 
 Remoteovi: `origin` = `Norsx/pas_seminar` (push dopušten, upstream praćen), `upstream` = `KxHartl/PAS-DUAL-ARM`
 (push NIJE rađen i ne radi se bez izričite potvrde korisnika). Lokalni `main` je od početka bio
-`upstream/main` + 1 commit (`05d09f5`, LiteRealm scaffolding); commiti seminara su samo lokalno + nisu pushani.
+`upstream/main` + 1 commit (`05d09f5`, LiteRealm scaffolding). Commiti seminara se **pushaju na `origin` (Norsx)** —
+korisnik je to odobrio 16. 9. (prvi push do `eff54de`); pushati nakon svakog završenog writera. Na `upstream` se ne pusha.
 
 ## 3. Što je napravljeno (commiti na `main`, redom)
 
@@ -116,7 +117,7 @@ plan cijeli; svaku tvrdnju provjeriti u kodu; iza odlomaka ostaviti `% izvor: pu
 5. README: dodati oba autora (Krešimir Hartl i Ivan Noršić) — trenutni README kaže „Izradio: Ivan Noršić“.
    Profesor gleda README na **`KxHartl/PAS-DUAL-ARM`** → push tamo samo uz potvrdu korisnika.
 6. Finalni build `bash ./.ai/scripts/helpers/build-docs.sh --version v1.0` (PDF je gitignoriran).
-7. Pitati korisnika treba li pushati commite seminara na `origin` (Norsx) — još nisu pushani.
+7. Nakon svakog većeg koraka: `git push origin main` (odobreno od korisnika).
 
 ## 6. Ključne činjenice o projektu (provjerene u kodu tijekom analize)
 
