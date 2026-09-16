@@ -26,8 +26,8 @@ Druga stranica, odmah iza naslovnice: naslov *GitHub repozitorij cijelog projekt
 
 - **Primopredaja za novog agenta: `notes/07_predaja/HANDOFF_seminar.md`** (čitati prvo).
 - Plan i status rada: **`notes/07_predaja/plan_seminara.md`** (§6 checklista).
-- Sljedeće: `latex_architect` postavlja `docs/`, zatim `writer` po poglavljima.
-- **Opseg: tijelo ~20 stranica** (korisnik) — sažeto, ali ništa bitno ne preskočiti.
+- **Sva poglavlja (1 do 10 i zaključak) su napisana i prevode se bez grešaka** (Tectonic).
+- Sljedeće: integrirati novopristigle snimke iz `docs/figures/snimke/`, ukloniti preostale okvire „SLIKA NEDOSTAJE“, skratiti/stegnuti opseg tijela na budžet (~20-22 str. tijela, ukupno <= 32 str.), provesti `qa_reviewer` i finalni build.
 
 ## Bilješke
 

@@ -97,36 +97,32 @@ Ostala K-imena iz plana §4.2 su rezervirana mjesta (okviri) dok korisnik ne po�
 
 ## 4. Stanje u trenutku zaustavljanja (korisnik: „stani“, 16. 9. 2026.)
 
-Sva tri writer agenta su **zaustavljena**; sve što su zapisali je commitano (zadnji `5ff141c`) i pushano na `origin`.
-Dokument se **prevodi bez grešaka** (Tectonic, 18 str.: 6 prednjih + tijelo + literatura/prilozi-stubovi;
-6 okvira „SLIKA NEDOSTAJE“).
+SVA POGLAVLJA (1 do 10 i zaključak) su **napisana i uspješno se prevode** bez grešaka (Tectonic, zadnji commit `3890ef9` pushan na `origin`).
+Kodovi su ugrađeni izravno u tekst (`lst:aruco`, `lst:nav-zones`, `lst:urdf-kontakt`, `lst:mission-launch`, `lst:misija-slijed`, `lst:room-navigator-gate`, `lst:place-verified`).
+Generirani TikZ dijagrami G04 (arhitektura sustava), G05 (hijerarhija pokretanja), G08 (tlocrt svijeta) i G09 (tok naredbi) su nacrtani i uključeni.
 
 | Poglavlje | Datoteka | Stanje | Opseg sada / budžet | Napomena za nastavak |
 |---|---|---|---|---|
-| 1 Uvod | `01-uvod.tex` | ❌ stub (samo naslov) | 0 / 1,5 str. | napisati po planu §3 (tablica zahtjeva R-01…R-20) |
-| 2 Arhitektura | `02-arhitektura.tex` | ❌ stub | 0 / 3 str. | **nacrt arhitekture (TikZ G04) — profesor ga traži**; G05 launch, G06 repo |
-| 3 Model i okruženje | `03-model-i-okruzenje.tex` | ❌ stub | 0 / 3,5 str. | tablica senzora, poze, svijet (TikZ G08 + `k03_gazebo_svijet.png`), `sim.launch.py` |
-| 4 Upravljanje | `04-upravljanje.tex` + `figures/tikz/upr-tok-naredbi.tex` | ⚠ napisano, agent ga je **sažimao** kad je zaustavljen | ~2 / 1,5 str. | pročitati, provjeriti da je cjelovito, skratiti na budžet |
-| 5 Percepcija | `05-percepcija.tex` | ❌ stub | 0 / 1,5 str. | — |
-| 6 Navigacija | `06-navigacija.tex` | ❌ stub | 0 / 3 str. | slike `g10_karta.png`, `g11_zone.png`, `k09_nav_gui.png` čekaju |
-| 7 Manipulacija | `07-manipulacija.tex` | ✅ napisano i sažeto (`6e621c2`) | ~3 / 2,5 str. | provjeriti; eventualno malo skratiti |
-| 8 Misija | `08-misija.tex` + `figures/tikz/mis-stanja.tex` | ⚠ napisano (158 redaka), vjerojatno cjelovito; nije sažeto; ispravljena jedna greška `\_place\_on\_marker` | ~4 / 2 str. (s okvirima za slike) | pročitati do kraja, skratiti ~na pola |
-| 9 Rezultati | `09-rezultati.tex` | ❌ stub | 0 / 2 str. | — |
-| Zaključak | `zakljucak.tex` | ❌ stub | 0 / 0,5 str. | — |
+| 1 Uvod | `01-uvod.tex` | ✅ napisano | ~1.3 / 1,5 str. | Tablica zahtjeva R-01…R-20, slika G02 |
+| 2 Arhitektura | `02-arhitektura.tex` + TikZ G04, G05 | ✅ napisano | ~3.5 / 3 str. | Nacrt arhitekture (G04), launch hijerarhija (G05), tablica čvorova, TF stablo |
+| 3 Model i okruženje | `03-model-i-okruzenje.tex` + TikZ G08 | ✅ napisano | ~4.5 / 3,5 str. | CAD G01, tablica senzora, tablica poza, tlocrt svijeta G08, svijet K03, sim.launch koraci |
+| 4 Upravljanje | `04-upravljanje.tex` + TikZ G09 | ✅ napisano | ~2 / 1,5 str. | 8 kontrolera, mecanum_drive lanac naredbi, profili |
+| 5 Percepcija | `05-percepcija.tex` | ✅ napisano | ~2 / 1,5 str. | ArUco detektor, `lst:aruco`, kamere zapešća, oblak točaka, scan_filter, footprint |
+| 6 Navigacija | `06-navigacija.tex` | ✅ napisano | ~3.5 / 3 str. | SLAM (0.02 m), AMCL (loc_error), Nav2, potencijalna polja `nav_zones` + `lst:nav-zones`, room_navigator, obris, nav_gui |
+| 7 Manipulacija | `07-manipulacija.tex` | ✅ napisano | ~3.5 / 2,5 str. | MoveIt 2 konfiguracija, mehanika stiska i krutog spoja, tablica STEP0-STEP7 |
+| 8 Misija | `08-misija.tex` + TikZ G12 | ✅ napisano | ~4.5 / 2 str. | mission.launch, 8 koraka, dijagram stanja G12, odlaganje u 11 koraka, provjera odlaganja |
+| 9 Rezultati | `09-rezultati.tex` | ✅ napisano | ~2.5 / 2 str. | Tablica rezultata (runovi 60, 62, 70, M1, M4, T2), tablica ključnih problema P-*, ograničenja |
+| 10 Zaključak | `zakljucak.tex` | ✅ napisano | ~1 / 0,5 str. | Cjeloviti sažetak postignutih rezultata i naučenih lekcija |
 
-**Ispisi su sada ugrađeni izravno u poglavlja** (nema priloga): `lst:urdf-kontakt` i sve ostale
-oznake vezane za poglavlja 7–8 su već implementirane kao `lstlisting` na mjestu gdje se
-spominju (vidi commit `docs: embed code listings inline, remove appendices`). Preostaju
-`lst:aruco` (poglavlje 5) i `lst:nav-zones` (poglavlje 6) — ugraditi ih na isti način kad se
-ta poglavlja pišu, NE dodavati novi prilog.
+**Status slika i novih snimaka:**
+Korisnik je stavio 5 novih snimaka u `docs/figures/snimke/`:
+1. `poza robota za vožnju-skupljene ruke- sprijeda.png` -> ciljano `k02_gazebo_poza_voznje.png` (K02)
+2. `robot i cijeli svijet izmetrija.png` -> ciljano `k01_gazebo_robot.png` (K01)
+3. `gazebo-robot straga-prolazi kroz vrata.png` -> ciljano `k18_vrata_s_kutijom.png` (K18)
+4. `odlozena kocka-robot odmaknut od stola.png` -> ciljano `k22_odlaganje_gotovo.png` (K22)
+5. `rviz odozgo-robot u pozi za voznju.png` -> ciljano `k08_rviz_navigacija.png` (K08)
 
-Uputa koju su writeri dobili (vrijedi i dalje): pročitati plan cijeli; svaku tvrdnju provjeriti u kodu; iza
-odlomaka `% izvor: putanja:retci`; kartice `notes/02_rjesenja/S-*` i `odstupanja.md` su **zastarjele** (vrijedi
-kod, `00_MAPA.md` 16. 9., `P-45`, M-redovi u `runovi.md`); commitati samo svoje putanje nakon svakog potpoglavlja;
-test build u privremenoj kopiji (vidi §2) dok radi više agenata.
-
-**Procjena preostalog:** ~15 od ~20 stranica tijela nije napisano (poglavlja 1, 2, 3, 5, 6, 9, zaključak).
-Poglavlja 4 i 8 su OK opsegom (kod je sad ugrađen u 8, provjeriti da se i dalje uklapa); 7 pregledati.
+Sljedeći agent treba rasporediti ove snimke u `docs/figures/` (pod ciljanim K-imenima iz plana §4.2), ukloniti preostale okvire „SLIKA NEDOSTAJE“, skratiti/stegnuti opseg tijela prema budžetu (~20-22 str. tijela, ukupno <= 32 str.) te pokrenuti `qa_reviewer` i finalni build.
 
 ## 5. Sljedeći koraci (checklista plana §6)
 
