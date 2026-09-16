@@ -2,34 +2,36 @@
 
 ## Projekt
 
-- **Naziv**: _TBD_
-- **Tip**: Seminar | Zadaća | Thesis
-- **Kolegij**: _TBD_
+- **Naziv**: PAS-DUAL-ARM — Projektiranje i simulacija dvoručnog mobilnog manipulatora
+- **Tip**: Seminar
+- **Kolegij**: Projektiranje autonomnih sustava (FSB)
 - **LaTeX format**: FSB Seminar
+- **Izvođači**: izv. prof. dr. sc. Marko Švaco (P), doc. dr. sc. Bojan Šekoranja (P),
+  Branimir Ćaran, mag. ing. mech. (V)
+- **Autori projekta**: Ivan Noršić i Krešimir Hartl (seminar se predaje u ime Ivana Noršića)
+- **GitHub (ide u seminar)**: https://github.com/KxHartl/PAS-DUAL-ARM
+
+## Zadatak (korisnik, 16. 9. 2026.)
+
+Napisati detaljan seminar o cijelom projektu. **Profesor traži u seminaru:**
+1. slike (puno — korisnik daje snimke zaslona, ostale generiramo iz projekta),
+2. nacrt arhitekture,
+3. link na GitHub s lijepim README-om,
+4. kodove.
+
+Druga stranica, odmah iza naslovnice: naslov *GitHub repozitorij cijelog projekta*, link
+`https://github.com/KxHartl/PAS-DUAL-ARM`, zatim *Izradili: Ivan Noršić i Krešimir Hartl*.
 
 ## Trenutni fokus
 
-- _Opišite što se trenutno radi._
+- Plan i status rada: **`notes/07_predaja/plan_seminara.md`** (§6 checklista).
+- Sljedeće: `latex_architect` postavlja `docs/`, zatim `writer` po poglavljima.
 
 ## Bilješke
 
-- _Napomene za agenta ili sebe (npr. "koristi IEEE stil za reference")._
-
----
-
-## Obavezno prije pozivanja agenta
-
-Popuni `.ai/config/project.yaml` — `latex_architect` čita metapodatke za
-naslovnicu odatle (ne iz ovog fajla):
-
-```yaml
-author_name: "Ime Prezime"
-course_name: "NAZIV KOLEGIJA"
-seminar_title: "Puni naslov seminara"
-seminar_title_short: "Kratki naslov za header"
-professor_title: "Prof. dr. sc."
-professor_name: "Ime Prezime"
-```
-
-Agent neće nastaviti dok ta 4 obavezna polja nisu popunjena:
-`author_name`, `course_name`, `seminar_title`, `professor_name`.
+- **Ništa se ne izmišlja** (korisnik): sve što seminar spominje mora postojati u kodu ili
+  projektnim dokumentima. Literatura samo iz projekta (zadatak, mail, upstream repozitoriji).
+- Seminar **ne smije biti površan ni kopija README-a** — objasniti strukturu, arhitekturu,
+  tok podataka i odluke.
+- Kartice `notes/02_rjesenja/S-*` i `odstupanja.md` su dijelom zastarjele; vrijedi kod.
+- LaTeX: Tectonic u `~/.local/bin/tectonic`; build `./.ai/scripts/helpers/build-docs.sh`.
