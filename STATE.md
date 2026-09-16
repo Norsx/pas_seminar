@@ -24,6 +24,7 @@ Druga stranica, odmah iza naslovnice: naslov *GitHub repozitorij cijelog projekt
 
 ## Trenutni fokus
 
+- **Primopredaja za novog agenta: `notes/07_predaja/HANDOFF_seminar.md`** (čitati prvo).
 - Plan i status rada: **`notes/07_predaja/plan_seminara.md`** (§6 checklista).
 - Sljedeće: `latex_architect` postavlja `docs/`, zatim `writer` po poglavljima.
 - **Opseg: tijelo ~20 stranica** (korisnik) — sažeto, ali ništa bitno ne preskočiti.
