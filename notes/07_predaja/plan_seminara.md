@@ -19,6 +19,8 @@ updated: 2026-09-16
   ostale slike generiramo iz projekta (§4.1).
 - Izvođači kolegija (naslovnica): izv. prof. dr. sc. Marko Švaco (P), doc. dr. sc. Bojan
   Šekoranja (P), Branimir Ćaran, mag. ing. mech. (V).
+- **Nema priloga A/B** (odluka korisnika, kasnije istog dana): pokretanje se ukratko spominje u
+  tekstu (npr. u poglavlju o misiji), a kodovi se ugrađuju kao `lstlisting` izravno u poglavlja.
 
 ## 1. Tvrda pravila pisanja
 
@@ -67,7 +69,10 @@ opisima, ali **ništa bitno ne preskočiti**: svaki podsustav mora biti objašnj
 razumije *kako je napravljen*. Pravilo gustoće: umjesto proze → kompaktne tablice (parametri,
 čvorovi, kontroleri, senzori); slike u parovima (`\dvijeslike`) ili nizovima; bez ponavljanja istog
 podatka u dva poglavlja (referenca `\ref` umjesto ponavljanja).
-Prednji dio (naslovnica, **str. 2 GitHub + autori**, sadržaj, popisi) i prilozi **ne ulaze** u 20 stranica.
+Prednji dio (naslovnica, **str. 2 GitHub + autori**, sadržaj, popisi) **ne ulazi** u 20 stranica.
+**Nema priloga.** Pokretanje sustava ide kao kratko potpoglavlje u poglavlju o misiji (ili uvodu);
+kodovi se NE gomilaju na kraju nego se svaki izvod umeće kao `lstlisting` izravno u poglavlje
+gdje se ta funkcija/datoteka objašnjava (odluka korisnika, 16. 9.).
 
 | # | Datoteka | Poglavlje | ~str. | Sadržaj (obavezno, ništa ne preskočiti) | Glavni izvori | Slike |
 |---|---|---|---|---|---|---|
@@ -81,8 +86,6 @@ Prednji dio (naslovnica, **str. 2 GitHub + autori**, sadržaj, popisi) i prilozi
 | 8 | `08-misija.tex` | ORKESTRACIJA MISIJE | 2 | `mission.launch.py`; 8 misijskih koraka; start (`/mission/start`, gumb); vožnja preko `room_navigator`-a; nošenje kroz vrata (referentna poza, gate); **odlaganje na marker u 11 koraka** s provjerama; očekivani log | `mission.launch.py`, `task.launch.py`, `main_task.py`, P-45, `misija.md` | G12, K18, K20–K22 (niz), K23 |
 | 9 | `09-rezultati.tex` | REZULTATI, PROBLEMI I OGRANIČENJA | 2 | tablica izmjerenih rezultata (run 62, M1, M4, M5, `loc_error`, offline provjere); **tablica ključnih problema** (P-09, P-15, P-17, P-35/43, P-39, P-40, P-45, P-46: simptom → uzrok → rješenje, jedan red); trenutna provjerena ograničenja | `runovi.md`, P-kartice, README §10, `odstupanja.md` (provjeriti prema kodu) | — |
 | 10 | `zakljucak.tex` | ZAKLJUČAK | 0.5 | što radi (izmjereno), što ne, naučeno (samo zapisano u projektu) | `00_MAPA.md`, P-45, `timeline.md` | — |
-| A | `prilog-a-pokretanje.tex` | PRILOG A: POKRETANJE | ≤1 | preduvjeti, dohvat (`vcs import`, zakrpe), build, misija jednom naredbom | README §1–7, `RUNNING.md` | — |
-| B | `prilog-b-kod.tex` | PRILOG B: IZVODI IZ KODA | ≤4 | **kodovi** — vidi §5 | kod | — |
 
 ## 4. Slike
 
@@ -142,21 +145,27 @@ stigne odluči se ukloniti je ili zamijeniti generiranom — ne ostavljati okvir
 | K25 ☆ | `k25_rqt_graph.png` | `rqt_graph` tijekom misije | `rqt_graph` |
 | K26 ☆ | `k26_kontroleri.png` | `ros2 control list_controllers` (svi aktivni) | terminal |
 
-## 5. Kodovi (Prilog B)
+## 5. Kodovi (ugrađeni u tekst, NE prilog)
 
-Kratki izvodi (10–25 redaka), svaki s putanjom, rasponom redaka i 1–3 rečenice objašnjenja:
-`robot.urdf.xacro` (kontaktni senzor + DetachableJoint), `controllers.yaml` (`base_controller`),
-`mission.launch.py`, `main_task.py` (glavni slijed misije), `aruco_detector.py` (detekcija + PnP),
-`nav_zones.py` (potencijalno polje), `room_navigator.py` (gate ruku), `main_task.py`
-(`PLACE VERIFIED` provjera). Paket `listings`, naslov „Ispis“. U tijelu rada se na ispise
-upućuje s `\ref`, kod se ne ponavlja u poglavljima.
+Nema zasebnog priloga s kodom. Svaki kratki izvod (10–25 redaka) ide kao `\begin{lstlisting}` točno
+na mjestu u poglavlju gdje se ta funkcija/datoteka objašnjava, s captionom (putanja + raspon redaka)
+i 1–3 rečenice objašnjenja odmah uz njega. Oznake `lst:*` se definiraju TU, ne u dodatnoj datoteci.
+
+Već ugrađeno (poglavlja 7–8): `lst:urdf-kontakt` (DetachableJoint, 07-manipulacija), `lst:mission-launch`
+(ulazak u simulaciju, 08-misija), `lst:misija-slijed` (prva dva misijska koraka, 08-misija),
+`lst:room-navigator-gate` (gate ruku, 08-misija), `lst:place-verified` (provjera odlaganja, 08-misija).
+
+Preostaje za poglavlja koja tek treba napisati: `lst:base-controller` (controllers.yaml: base_controller,
+u poglavlju 4 ako treba — trenutno pokriveno tablicom, izostaviti ako se ne uklapa u budžet),
+`lst:aruco` (aruco_detector.py: detekcija + PnP, poglavlje 5), `lst:nav-zones` (nav_zones.py:
+potencijalno polje, poglavlje 6). Isto pravilo: izvod ide odmah uz opis, ne na kraju.
 
 ## 6. Tijek rada i status
 
 - [x] Analiza projekta, plan (ovaj fajl), `STATE.md`, metapodaci u `project.yaml`
 - [x] Tectonic instaliran (`~/.local/bin/tectonic`)
 - [x] `latex_architect`: predložak, naslovnica s 3 izvođača, **str. 2 GitHub + autori**, popisi,
-      `listings`, TikZ, makroi `\slika`/`\dvijeslike` s rezervnim okvirom, stubovi 10 poglavlja + 2 priloga, build
+      `listings`, TikZ, makroi `\slika`/`\dvijeslike` s rezervnim okvirom, stubovi 10 poglavlja, build (prilozi uklonjeni 16. 9. — kod se ugrađuje u poglavlja)
 - [x] G01, G02, G10, G11 gotove; G03 izbačena (zahtjevi su tablica); G04–G09, G12 = TikZ, rade writeri
 - [x] Bibliografija `docs/references.bib` (samo izvori iz projekta)
 - [x] Prve snimke korisnika: `k03_gazebo_svijet`, `k09_nav_gui`, `k16_hvat_dizanje`, `k21_odlaganje`

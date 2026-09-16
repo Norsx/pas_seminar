@@ -64,8 +64,13 @@ korisnik je to odobrio 16. 9. (prvi push do `eff54de`); pushati nakon svakog zav
   ispisima rade pod Tectonicom (kuka u preambuli).
 - Paketi: tikz (positioning, arrows.meta, shapes.geometric, fit, backgrounds, calc), siunitx (decimalni zarez), subcaption, pdflscape.
 - Redoslijed: `01-uvod`, `02-arhitektura`, `03-model-i-okruzenje`, `04-upravljanje`, `05-percepcija`,
-  `06-navigacija`, `07-manipulacija`, `08-misija`, `09-rezultati`, `zakljucak`, literatura, `\appendix`
-  `prilog-a-pokretanje`, `prilog-b-kod`. Oznake sekcija `sec:<ime datoteke>`.
+  `06-navigacija`, `07-manipulacija`, `08-misija`, `09-rezultati`, `zakljucak`, literatura.
+  Oznake sekcija `sec:<ime datoteke>`.
+  **16. 9. (kasnije, korisnikova odluka): prilozi A i B uklonjeni.** `\appendix` blok i oba `\input`
+  maknuti su iz `docs/main.tex`, stub datoteke `prilog-a-pokretanje.tex`/`prilog-b-kod.tex` obrisane
+  (bile su prazni stubovi, ništa se ne gubi). Pokretanje sustava ide kao kratko potpoglavlje unutar
+  postojećih poglavlja (npr. uz misiju/uvod), a **kod se ugrađuje kao `lstlisting` izravno u
+  poglavlje** gdje se ta funkcija objašnjava — ne u dodatku na kraju.
 
 ### Bibliografija (`docs/references.bib`) — dopušteni ključevi
 `zadatak2025`, `mail2026`, `omnibase`, `kortex`, `pantilt`, `realsense`, `arucoros`, `pasdualarm`.
@@ -108,20 +113,20 @@ Dokument se **prevodi bez grešaka** (Tectonic, 18 str.: 6 prednjih + tijelo + l
 | 8 Misija | `08-misija.tex` + `figures/tikz/mis-stanja.tex` | ⚠ napisano (158 redaka), vjerojatno cjelovito; nije sažeto; ispravljena jedna greška `\_place\_on\_marker` | ~4 / 2 str. (s okvirima za slike) | pročitati do kraja, skratiti ~na pola |
 | 9 Rezultati | `09-rezultati.tex` | ❌ stub | 0 / 2 str. | — |
 | Zaključak | `zakljucak.tex` | ❌ stub | 0 / 0,5 str. | — |
-| Prilog A | `prilog-a-pokretanje.tex` | ❌ stub | 0 / ≤1 str. | — |
-| Prilog B | `prilog-b-kod.tex` | ❌ stub | 0 / ≤4 str. | mora definirati oznake `lst:*` (vidi dolje) na koje se 4, 7, 8 već pozivaju |
 
-Oznake ispisa koje prilog B mora definirati (poglavlja ih već `\ref`-aju): `lst:urdf-kontakt`,
-`lst:base-controller`, `lst:mission-launch`, `lst:misija-slijed`, `lst:aruco`, `lst:nav-zones`,
-`lst:room-navigator-gate`, `lst:place-verified`.
+**Ispisi su sada ugrađeni izravno u poglavlja** (nema priloga): `lst:urdf-kontakt` i sve ostale
+oznake vezane za poglavlja 7–8 su već implementirane kao `lstlisting` na mjestu gdje se
+spominju (vidi commit `docs: embed code listings inline, remove appendices`). Preostaju
+`lst:aruco` (poglavlje 5) i `lst:nav-zones` (poglavlje 6) — ugraditi ih na isti način kad se
+ta poglavlja pišu, NE dodavati novi prilog.
 
 Uputa koju su writeri dobili (vrijedi i dalje): pročitati plan cijeli; svaku tvrdnju provjeriti u kodu; iza
 odlomaka `% izvor: putanja:retci`; kartice `notes/02_rjesenja/S-*` i `odstupanja.md` su **zastarjele** (vrijedi
 kod, `00_MAPA.md` 16. 9., `P-45`, M-redovi u `runovi.md`); commitati samo svoje putanje nakon svakog potpoglavlja;
 test build u privremenoj kopiji (vidi §2) dok radi više agenata.
 
-**Procjena preostalog:** ~15 od ~20 stranica tijela nije napisano (poglavlja 1, 2, 3, 5, 6, 9, zaključak) +
-oba priloga (~5 str.); poglavlja 4 i 8 treba skratiti, 7 pregledati.
+**Procjena preostalog:** ~15 od ~20 stranica tijela nije napisano (poglavlja 1, 2, 3, 5, 6, 9, zaključak).
+Poglavlja 4 i 8 su OK opsegom (kod je sad ugrađen u 8, provjeriti da se i dalje uklapa); 7 pregledati.
 
 ## 5. Sljedeći koraci (checklista plana §6)
 

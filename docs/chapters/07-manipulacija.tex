@@ -57,9 +57,24 @@ isprobano i kocka isklizne, pa jastučići ulaze u plohu samo \texttt{touch\_dep
 % izvor: P-14, D-06; postures.py GRIPPER_CLOSED = 0.791; main_task.py:223-225
 
 \paragraph{DART ne drži kocku trenjem} Uz koeficijent trenja do 5, masu 0{,}2~kg i efort hvataljke 120 kutija se nije
-podigla. Drži je kruti spoj \texttt{DetachableJoint} (\texttt{left\_bracelet\_link}--\texttt{aruco\_box},
-ispis~\ref{lst:urdf-kontakt}), uključen tek nakon neovisnog dokaza kontakta obiju ruku.
+podigla. Drži je kruti spoj \texttt{DetachableJoint} između \texttt{left\_bracelet\_link} i
+\texttt{aruco\_box}, uključen tek nakon neovisnog dokaza kontakta obiju ruku:
 % izvor: P-15 (pokušaji 1-3), D-05, D-12; robot.urdf.xacro:223-241
+
+\begin{lstlisting}[style=code-xml, caption={Kruti spoj kutije, aktivan tek nakon dokazanog kontakta (\texttt{robot.urdf.xacro}, redci 231--240)}, label={lst:urdf-kontakt}]
+<plugin filename="ignition-gazebo-detachable-joint-system"
+        name="ignition::gazebo::systems::DetachableJoint">
+  <parent_link>left_bracelet_link</parent_link>
+  <child_model>aruco_box</child_model>
+  <child_link>box_link</child_link>
+  <attach_topic>/aruco_box/attach</attach_topic>
+  <detach_topic>/aruco_box/detach</detach_topic>
+  <output_topic>/aruco_box/state</output_topic>
+</plugin>
+\end{lstlisting}
+
+Zglob kreće spojen, pa ga \texttt{main\_task} na startu misije odspoji i ponovno spoji tek nakon
+provjere dodira -- fizičko opravdanje umjesto teleportiranog spajanja na sredinu kutije.
 
 \paragraph{Samo jedna kruta veza} Spoj i druga ruka koja djeluje svojom putanjom čine preodređen
 sustav, rješavač divergira i kutija odleti metrima daleko. Zato desni jastučić nakon spajanja samo
