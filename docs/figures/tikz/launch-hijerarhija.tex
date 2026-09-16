@@ -1,0 +1,75 @@
+% G05: Hijerarhija pokretackih datoteka (mission.launch.py -> sim, nav2, task)
+% Izvori: launch/mission.launch.py:20-107, launch/sim.launch.py, launch/nav2.launch.py, launch/task.launch.py
+\begin{tikzpicture}[
+  font=\scriptsize,
+  topl/.style={draw, rounded corners=3pt, fill=blue!12, align=center, text width=55mm, inner sep=3pt},
+  subl/.style={draw, rounded corners=2pt, fill=orange!15, align=center, text width=42mm, inner sep=3pt},
+  nodebox/.style={draw, rounded corners=2pt, fill=white, align=center, text width=38mm, inner sep=2pt, font=\tiny},
+  arr/.style={-{Stealth[length=1.5mm]}, semithick},
+  lbl/.style={font=\tiny\bfseries, text=black!70, fill=white, inner sep=1pt}
+]
+
+  % Vrh: mission.launch.py
+  \node[topl] (mission) at (7.5, 0)
+    {\textbf{\texttt{mission.launch.py}}\\Krovna orkestracija pokretanja sustava};
+
+  % Podređeni launch fajlovi
+  \node[subl] (sim) at (2.2, -1.5)
+    {\textbf{\texttt{sim.launch.py}} ($t = 0$~s)\\Simulacija i aktuatori};
+  \node[subl] (nav) at (7.5, -1.5)
+    {\textbf{\texttt{nav2.launch.py}} ($t = 6$~s)\\Mapiranje i navigacija};
+  \node[subl] (task) at (12.8, -1.5)
+    {\textbf{\texttt{task.launch.py}} ($t = 10$~s)\\Manipulacija i misija};
+
+  % RViz (t = 8 s)
+  \node[nodebox, fill=purple!10, text width=26mm] (rviz) at (10.15, -0.75)
+    {\textbf{\texttt{rviz2}} ($t = 8$~s)\\prikaz \texttt{nav2.rviz}};
+
+  % Čvorovi pod sim
+  \node[nodebox] (gz) at (2.2, -2.65)
+    {Gazebo Fortress (\texttt{seminar\_world.sdf})\\DART fizikalni rješavač};
+  \node[nodebox] (spwn) at (2.2, -3.45)
+    {Spawn robota iz \texttt{robot.urdf.xacro}\\početna poza AMCL-a $(0,0,0)$};
+  \node[nodebox] (bridge) at (2.2, -4.25)
+    {\texttt{ros\_gz\_bridge} (\texttt{bridge.yaml})\\senzori, kontakti, clock, spojevi};
+  \node[nodebox] (ctrl) at (2.2, -5.05)
+    {\texttt{spawner} (8 kontrolera)\\120~s timeout, \texttt{controllers.yaml}};
+
+  % Čvorovi pod nav2
+  \node[nodebox] (amclnode) at (7.5, -2.65)
+    {Karta \texttt{seminar\_map.yaml}\\AMCL lokalizacija};
+  \node[nodebox] (navstack) at (7.5, -3.45)
+    {Nav2 navigacijski poslužitelji\\(planer, kontroler, costmapovi)};
+  \node[nodebox] (navhelper) at (7.5, -4.25)
+    {\texttt{feature\_registry}, \texttt{nav\_zones},\\i \texttt{room\_navigator}};
+  \node[nodebox] (navsafety) at (7.5, -5.05)
+    {\texttt{collision\_monitor}, \texttt{cmd\_vel\_relay},\\i \texttt{nav\_gui} (operater)};
+
+  % Čvorovi pod task
+  \node[nodebox] (mg) at (12.8, -2.65)
+    {\texttt{move\_group} (MoveIt~2)\\planiranje dvoručnih poza};
+  \node[nodebox] (aruco) at (12.8, -3.45)
+    {\texttt{aruco.launch.py}\\4 instance \texttt{aruco\_detector}};
+  \node[nodebox] (mtask) at (12.8, -4.45)
+    {\textbf{\texttt{main\_task.py}} ($t = 13$~s)\\parametar \texttt{mission:=true}\\izvršavanje misijskog stabla};
+
+  % Poveznice
+  \draw[arr] (mission) -| node[lbl, pos=0.4] {odgoda 0~s} (sim);
+  \draw[arr] (mission) -- node[lbl] {odgoda 6~s} (nav);
+  \draw[arr] (mission) -| node[lbl, pos=0.4] {odgoda 10~s} (task);
+  \draw[arr, dashed] (mission) -| (rviz);
+
+  \draw[arr] (sim) -- (gz);
+  \draw[arr] (sim) -- (spwn);
+  \draw[arr] (sim) -- (bridge);
+  \draw[arr] (sim) -- (ctrl);
+
+  \draw[arr] (nav) -- (amclnode);
+  \draw[arr] (nav) -- (navstack);
+  \draw[arr] (nav) -- (navhelper);
+  \draw[arr] (nav) -- (navsafety);
+
+  \draw[arr] (task) -- (mg);
+  \draw[arr] (task) -- (aruco);
+  \draw[arr] (task) -- node[font=\tiny, fill=white, inner sep=1pt] {odgoda 3~s} (mtask);
+\end{tikzpicture}

@@ -1,0 +1,82 @@
+% G04: Arhitektura sustava (slojevi Gazebo, bridge/ros2_control, MoveIt/Nav2, aplikacijski cvorovi)
+% Izvori: launch/mission.launch.py, launch/sim.launch.py, launch/nav2.launch.py, launch/task.launch.py,
+%         config/bridge.yaml, config/controllers.yaml, pas_dual_arm_scripts
+\begin{tikzpicture}[
+  scale=0.97, transform shape,
+  font=\scriptsize,
+  layer/.style={draw, rounded corners=3pt, fill=#1, inner sep=4pt},
+  nodebox/.style={draw, rounded corners=2pt, fill=white, align=center, inner sep=2pt, font=\tiny},
+  arr/.style={-{Stealth[length=1.5mm]}, semithick},
+  darr/.style={{Stealth[length=1.5mm]}-{Stealth[length=1.5mm]}, semithick}
+]
+
+  % Sloj 5: Aplikacija i misija (vrh)
+  \begin{scope}[local bounding box=applayer]
+    \node[nodebox, fill=blue!10, text width=24mm] (mt) at (1.5, 0) {\textbf{main\_task}\\orkestracija misije};
+    \node[nodebox, fill=blue!10, text width=22mm] (rn) at (4.4, 0) {\textbf{room\_navigator}\\graf soba, vrata};
+    \node[nodebox, fill=blue!10, text width=22mm] (nz) at (7.1, 0) {\textbf{nav\_zones}\\potencijalno polje};
+    \node[nodebox, fill=blue!10, text width=22mm] (ad) at (9.8, 0) {\textbf{aruco\_detector}\\detekcija 4 markera};
+    \node[nodebox, fill=blue!10, text width=22mm] (cm) at (12.5, 0) {\textbf{cmd\_vel\_relay}\\i collision\_monitor};
+    \node[nodebox, fill=blue!5, text width=15mm] (gui) at (14.8, 0) {\textbf{nav\_gui}\\upravljač};
+  \end{scope}
+
+  % Sloj 4: Autonomni stogovi (MoveIt 2 & Nav2)
+  \begin{scope}[local bounding box=stacklayer]
+    \node[nodebox, fill=orange!15, text width=38mm] (moveit) at (3.0, -1.35)
+      {\textbf{MoveIt 2} (\texttt{move\_group})\\kinematika KDL, OMPL, planiranje};
+    \node[nodebox, fill=orange!15, text width=44mm] (nav2) at (8.5, -1.35)
+      {\textbf{Nav2 Stog}\\NavfnPlanner, MPPI/DWB, costmapovi};
+    \node[nodebox, fill=orange!15, text width=32mm] (amcl) at (13.5, -1.35)
+      {\textbf{AMCL / slam\_toolbox}\\lokalizacija na karti i SLAM};
+  \end{scope}
+
+  % Sloj 3: ros2_control & Hardware Abstraction
+  \begin{scope}[local bounding box=controllayer]
+    \node[nodebox, fill=green!15, text width=42mm] (armctrl) at (3.0, -2.65)
+      {\textbf{Ruke, vodilice, glava i hvataljke}\\JTC (pozicijski/effort) i GripperAction};
+    \node[nodebox, fill=green!15, text width=44mm] (basectrl) at (8.5, -2.65)
+      {\textbf{base\_controller}\\MecanumDriveController (\texttt{velocity})};
+    \node[nodebox, fill=green!15, text width=32mm] (cmgr) at (13.5, -2.65)
+      {\textbf{controller\_manager}\\100~Hz, \texttt{joint\_states}};
+  \end{scope}
+
+  % Sloj 2: Mostovi prema simulatoru
+  \begin{scope}[local bounding box=bridgelayer]
+    \node[nodebox, fill=purple!12, text width=70mm] (ignctrl) at (4.5, -3.85)
+      {\textbf{ign\_ros2\_control} (\texttt{IgnitionSystem})\\dvosmjeran prijenos naredbi i stanja zglobova};
+    \node[nodebox, fill=purple!12, text width=75mm] (gzbridge) at (11.5, -3.85)
+      {\textbf{ros\_gz\_bridge} (\texttt{bridge.yaml})\\lidar, RGB-D kamere, kontakti, FT, attach/detach, clock};
+  \end{scope}
+
+  % Sloj 1: Gazebo simulator (dno)
+  \begin{scope}[local bounding box=gzlayer]
+    \node[nodebox, fill=gray!18, text width=152mm] (gzsim) at (7.8, -4.95)
+      {\textbf{Gazebo Fortress (Ignition 6)} --- fizikalni pogon DART\\
+       Svijet \texttt{seminar\_world.sdf}, senzorski dodaci (\texttt{gpu\_lidar}, kamere, kontakti, FT), \texttt{DetachableJoint}};
+  \end{scope}
+
+  % Oznake slojeva lijevo
+  \node[font=\tiny\bfseries, text=blue!70!black, rotate=90] at (-0.3, 0) {APLIKACIJA};
+  \node[font=\tiny\bfseries, text=orange!70!black, rotate=90] at (-0.3, -1.35) {STOGOVI};
+  \node[font=\tiny\bfseries, text=green!50!black, rotate=90] at (-0.3, -2.65) {UPRAVLJANJE};
+  \node[font=\tiny\bfseries, text=purple!70!black, rotate=90] at (-0.3, -3.85) {MOST};
+  \node[font=\tiny\bfseries, text=gray!80!black, rotate=90] at (-0.3, -4.95) {SIMULACIJA};
+
+  % Poveznice
+  \draw[darr] (mt) -- (moveit);
+  \draw[darr] (rn) -- (nav2);
+  \draw[arr] (nz) -- (nav2);
+  \draw[arr] (ad) -- (mt);
+  \draw[arr] (cm) -- (basectrl);
+  \draw[arr] (amcl) -- (nav2);
+  \draw[darr] (moveit) -- (armctrl);
+  \draw[darr] (nav2) -- (cm);
+  \draw[darr] (armctrl) -- (ignctrl);
+  \draw[darr] (basectrl) -- (ignctrl);
+  \draw[darr] (cmgr) -- (ignctrl);
+  \draw[darr] (ignctrl) -- (gzsim);
+  \draw[arr] (gzsim) -- (gzbridge);
+  \draw[arr] (gzbridge) -- (ad);
+  \draw[arr] (gzbridge) -- (amcl);
+  \draw[arr] (gzbridge) -- (cm);
+\end{tikzpicture}

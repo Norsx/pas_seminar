@@ -1,2 +1,132 @@
 \section{Arhitektura sustava}
 \label{sec:02-arhitektura}
+
+% izvor: launch/mission.launch.py:1-107; config/bridge.yaml; config/controllers.yaml; README.md §8
+Arhitektura programskog sustava robota PAS-DUAL-ARM strukturirana je u pet jasno odvojenih
+funkcionalnih slojeva (slika~\ref{fig:arh-sustava}): simulacijski sloj u Gazebu, sloj mostova i
+hardverske apstrakcije, sloj niskorazinskih kontrolera (\texttt{ros2\_control}), sloj autonomnih
+stogova za planiranje (MoveIt~2 i Nav2) te vršni aplikacijski sloj misijskih čvorova. Ovakva
+razdioba osigurava modularnost, jednostavnu zamjenu simuliranih senzora i aktuatora stvarnim
+sklopovljem te strogu izolaciju odgovornosti pojedinih podsustava.
+
+\begin{figure}[H]
+  \centering
+  \input{figures/tikz/arh-sustava}
+  \caption{Nacrt arhitekture sustava: pet slojeva od Gazebo fizike do aplikacijske orkestracije}
+  \label{fig:arh-sustava}
+\end{figure}
+
+\subsection{Slojevi sustava i raspodjela čvorova}
+\label{sec:02-slojevi}
+
+% izvor: config/bridge.yaml:1-164; robot.urdf.xacro:479-481; launch/sim.launch.py:227-252
+Simulacijski sloj izvodi se unutar simulatora Gazebo Fortress uz DART fizikalni rješavač.
+Između Gazeba i ROS~2 ekosustava djeluju dva komplementarna mosta. Dodatak \texttt{ign\_ros2\_control}
+\cite{mail2026} preko sučelja \texttt{IgnitionSystem} povezuje \texttt{controller\_manager}
+s virtualnim zglobovima robota na frekvenciji od 100~Hz. Svi senzorski tokovi (lidar, RGB-D kamere,
+kontaktni senzori na prstima, dvoosni tenzometrijski FT senzori) te naredbe za kruto spajanje
+kocke (\texttt{DetachableJoint}) prenose se putem paketa \texttt{ros\_gz\_bridge} prema
+deklaraciji u \texttt{bridge.yaml}.
+
+% izvor: pas_dual_arm_scripts/setup.py:28-44; main_task.py; room_navigator.py; nav_zones.py
+U tablici~\ref{tab:cvorovi} prikazani su ključni aplikacijski čvorovi razvijeni u sklopu paketa
+\texttt{pas\_dual\_arm\_scripts}, njihove primarne odgovornosti te ulazno-izlazna komunikacijska sučelja.
+
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setstretch{1.05}
+  \caption{Pregled aplikacijskih čvorova sustava u paketu \texttt{pas\_dual\_arm\_scripts}}
+  \label{tab:cvorovi}
+  \begin{tabularx}{\textwidth}{@{}>{\bfseries}p{2.8cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.6cm}@{}}
+    \toprule
+    Čvor & Glavna odgovornost & Ključne teme, akcije i servisi \\
+    \midrule
+    \texttt{main\_task} & Orkestracija misije (8 koraka), dvoručni hvat, vizualno navođenje, odlaganje & Ulaz: \texttt{/mission/start}, detekcije, TF\newline Izlaz: \texttt{/room\_navigator/goto}, akcije ruku \\
+    \texttt{room\_navigator} & Navigacija među sobama, prolazak kroz vrata uz provjeru poze ruku & Ulaz: \texttt{/room\_navigator/goto}, \texttt{/joint\_states}\newline Izlaz: \texttt{/navigate\_through\_poses}, status \\
+    \texttt{nav\_zones} & Izračun jedinstvenog potencijalnog polja i brazdi nulte cijene iz karte & Ulaz: \texttt{/map}\newline Izlaz: \texttt{/nav\_zones/field} (costmap filter) \\
+    \texttt{feature\_registry} & Semantičko prepoznavanje vrata, stolova i dock poza iz geometrije & Ulaz: \texttt{/map}\newline Izlaz: registar značajki, servisi koordinata \\
+    \texttt{aruco\_detector} & Detekcija ArUco markera (glava i zapešća), estimacija 6D poze & Ulaz: \texttt{/camera/*}, \texttt{/wrist\_*/*}\newline Izlaz: \texttt{/aruco\_detections}, objave u \texttt{/tf} \\
+    \texttt{cmd\_vel\_relay} & Arbitraža i sigurnosno prespajanje brzinskih naredbi baze & Ulaz: \texttt{/cmd\_vel\_safe}, \texttt{/cmd\_vel}\newline Izlaz: \texttt{reference\_unstamped} \\
+    \texttt{collision\_monitor} & Neposredno zaustavljanje baze na temelju laserskog obrisa & Ulaz: \texttt{/scan\_filtered}, poligon obrisa\newline Izlaz: \texttt{/cmd\_vel\_safe} \\
+    \texttt{footprint\_publisher} & Dinamičko prilagođavanje tlocrtnog poligona robota i nošene kocke & Ulaz: stanje misije, \texttt{/joint\_states}\newline Izlaz: \texttt{/footprint}, \texttt{/mission/carried\_points} \\
+    \texttt{scan\_filter} & Uklanjanje točaka vlastitog tijela i kotača iz laserskog skena & Ulaz: \texttt{/scan}\newline Izlaz: \texttt{/scan\_filtered} \\
+    \texttt{nav\_gui} & Tkinter grafičko sučelje za praćenje misije i ručni start & Ulaz: \texttt{/mission/task\_status}\newline Izlaz: objava na \texttt{/mission/start} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Koordinatni sustavi i stablo transformacija (TF)}
+\label{sec:02-tf}
+
+% izvor: robot.urdf.xacro:20-250; kortex .../gen3.xacro; base.urdf.xacro; pan_tilt.xacro
+Prostorni odnosi i kinematičke veze formalizirani su kroz stablo transformacija okvira (\texttt{/tf}
+i \texttt{/tf\_static}). Ishodište navigacijskog prostora čini globalni okvir \texttt{map}, u kojem
+algoritam AMCL procjenjuje pozu odometrijskog okvira \texttt{odom}. Kontroler baze
+\texttt{mecanum\_drive\_controller} putem releja \texttt{cmd\_vel\_relay} objavljuje transformaciju
+između \texttt{odom} i tlocrtne projekcije robota \texttt{base\_footprint}, na koju se nadovezuje
+strukturna točka \texttt{base\_link}.
+
+Kinematičko stablo robota grana se iz okvira \texttt{base\_link} na četiri glavne grane:
+\begin{enumerate}
+  \item \textbf{Lidar}: \texttt{base\_link} $\rightarrow$ \texttt{laser\_link} (postavljen na visini $0{,}209$~m, usmjeren vodoravno prema naprijed).
+  \item \textbf{Torzo i vodilice}: \texttt{base\_link} $\rightarrow$ \texttt{torso\_link} $\rightarrow$ prizmatični zglobovi $\rightarrow$ klizači \texttt{torso\_left\_carriage\_link} i \texttt{torso\_right\_carriage\_link}.
+  \item \textbf{Robotske ruke i hvataljke}: sa svakog klizača grana se kinematički lanac Kinova Gen3 manipulatora (\texttt{*\_base\_link} $\rightarrow$ zglobovi $1\dots7$ $\rightarrow$ \texttt{*\_end\_effector\_link} $\rightarrow$ \texttt{*\_bracelet\_link}), na koji su montirane kamere zapešća (\texttt{wrist\_*\_camera\_link}) te baze hvataljki Robotiq 2F-85 s kinematikom prstiju.
+  \item \textbf{Pan-tilt glava}: s vrha torza (\texttt{torso\_link}) lanac vodi preko rotacijskih zglobova \texttt{pan\_tilt\_yaw\_link} i \texttt{pan\_tilt\_pitch\_link} do optičkog okvira RGB-D kamere \texttt{camera\_color\_optical\_frame}.
+\end{enumerate}
+Detektirani ArUco markeri i manipulirana kocka dinamički se vežu u TF stablo preko okvira kamere koja
+ih trenutno opaža (\texttt{camera\_link} ili \texttt{wrist\_*\_link}), dok čvor \texttt{main\_task}
+prilikom hvata pamti fiksnu transformaciju kocke u odnosu na zapešće (\texttt{\_hold}) kako bi
+očuvao praćenje objekta kada marker izađe iz vidnog polja.
+
+\subsection{Hijerarhija pokretačkih skripti (Launch)}
+\label{sec:02-launch}
+
+% izvor: launch/mission.launch.py:1-107; launch/sim.launch.py; launch/nav2.launch.py; launch/task.launch.py
+Pokretanje cjelokupnog sustava izvedeno je hijerarhijski kroz četiri ugniježđene pokretačke skripte
+(slika~\ref{fig:launch-hijerarhija}). Krovna datoteka \texttt{mission.launch.py} uvodi precizno
+odmjerena vremenska kašnjenja kako bi se spriječilo zagušenje procesora i osigurala dostupnost
+ROS~2 servisa prije pokretanja ovisnih čvorova:
+
+\begin{figure}[H]
+  \centering
+  \input{figures/tikz/launch-hijerarhija}
+  \caption{Hijerarhijski slijed pokretačkih skripti s vremenskim razmacima inicijalizacije}
+  \label{fig:launch-hijerarhija}
+\end{figure}
+
+U trenutku $t = 0$~s \texttt{sim.launch.py} pokreće simulator Gazebo, učitava URDF model preko
+xacro procesora, stvara robota u ishodištu svijeta (početna AMCL poza $(0, 0, 0)$), uspostavlja
+\texttt{ros\_gz\_bridge} te pokreće spawner procese za svih osam kontrolera s rokom čekanja od 120~s.
+Nakon 6~s \texttt{nav2.launch.py} podiže kartu, AMCL lokalizaciju, Nav2 poslužitelje, potencijalna
+polja i sigurnosne monitore. U trenutku $t = 8$~s opcionalno se otvara RViz2, a na $t = 10$~s
+\texttt{task.launch.py} aktivira \texttt{move\_group} i detektore markera. Konačno, na $t = 13$~s
+pokreće se \texttt{main\_task} s argumentom \texttt{mission:=true}, čime započinje autonomna misija.
+
+\subsection{Struktura repozitorija, ovisnosti i projektno okruženje}
+\label{sec:02-repozitorij}
+
+% izvor: ros2.repos:1-35; patches/*; scripts/run_native.sh; README.md §8-9
+Izvorni kod projekta podijeljen je u četiri vlastita paketa unutar direktorija \texttt{src/}:
+\begin{itemize}
+  \item \texttt{pas\_dual\_arm\_bringup}: pokretačke skripte cijelog sustava, konfiguracijske YAML datoteke za kontrolere, Nav2 i mostove, te definicija simulacijskog svijeta i karata.
+  \item \texttt{pas\_dual\_arm\_scripts}: implementacija svih misijskih, navigacijskih i percepcijskih čvorova u programskom jeziku Python.
+  \item \texttt{pas\_dual\_arm\_description}: cjeloviti xacro modeli sklopljenog robota, omnidirekcijske baze, senzorskih elemenata i kolizijskih geometrija.
+  \item \texttt{pas\_dual\_arm\_moveit\_config}: semantički opisi robota (SRDF), konfiguracija kinematičkih rješavača KDL i OMPL algoritama za dvoručni sustav.
+  \item \texttt{dual\_arm\_torso}: CAD meshevi i kinematički opis linearnih vodilica torza \cite{mail2026}.
+\end{itemize}
+
+% izvor: ros2.repos:20-35; patches/
+Vanjski paketi definirani su u datoteci \texttt{ros2.repos} i vezani na točno određene commitove:
+\texttt{ros2\_kortex} (\texttt{116d87a}), \texttt{omni\_base\_simulation} (\texttt{77248ac}),
+\texttt{pan\_tilt\_ros} (\texttt{9b08758}), \texttt{realsense-ros} (\texttt{6d87b07}) i
+\texttt{aruco\_ros} (\texttt{86a0bbb}). Nad vanjskim paketima primijenjene su dvije lokalne
+zakrpe u direktoriju \texttt{patches/}: \texttt{pan\_tilt\_ros} zakrpa koja dodaje korektne inercijske
+matrice i granice momenta za Gazebo Fortress fiziku te zakrpa za \texttt{ros2\_kortex} koja uklanja
+nepodržane Isaac Gym argumente iz makroa Robotiq 2F-85 hvataljke.
+
+% izvor: scripts/run_native.sh; notes/03_problemi/P-01_shell_zenoh_contamination.md
+Za pouzdano i determinističko izvođenje razvijena je skripta \texttt{./scripts/run\_native.sh}, koja
+postavlja izoliranu okolinu, definira \texttt{RMW\_IMPLEMENTATION=rmw\_cyclonedds\_cpp} i
+\texttt{IGN\_GAZEBO\_RESOURCE\_PATH} te sprječava interferenciju sa sustavskim varijablama i vanjskim
+middleware protokolima (npr. Zenoh, zabilježen u problemu P-01).
