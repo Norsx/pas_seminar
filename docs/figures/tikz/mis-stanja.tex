@@ -1,0 +1,46 @@
+% G12: mission state diagram of main_task.run() in mission mode.
+% Sources: src/pas_dual_arm_scripts/pas_dual_arm_scripts/main_task.py
+%   run() 2886-3295 (_report_mission_step 1..8), _place_on_marker 2588-2840, _fail 3330-3338.
+\begin{tikzpicture}[
+    font=\scriptsize,
+    st/.style={draw, rounded corners=2pt, fill=blue!4, text width=2.6cm, align=center,
+               minimum height=1.25cm, inner sep=2pt},
+    ok/.style={st, fill=green!10, draw=green!40!black},
+    ab/.style={draw=red!60!black, fill=red!5, rounded corners=2pt, text width=10.6cm,
+               align=center, inner sep=3pt},
+    flow/.style={-{Stealth[length=2mm]}, thick},
+    fail/.style={-{Stealth[length=1.6mm]}, dashed, red!60!black}
+  ]
+  % top row, left to right
+  \node[st] (s0) at (0,0)    {\textbf{0}~~STEP0\\ spoj otpušten,\\ vodilice 0,20~m};
+  \node[st] (s1) at (3.15,0) {\textbf{1}~~Priprema ruku\\ \texttt{DRIVE\_V4} (MoveIt)};
+  \node[st] (s2) at (6.3,0)  {\textbf{2}~~Čekanje naredbe\\ \texttt{/mission/start}};
+  \node[st] (s3) at (9.45,0) {\textbf{3}~~Navigacija do sobe\\ s kockom\\ \texttt{blue:dock}};
+  \node[st] (s4) at (12.6,0) {\textbf{4}~~Percepcija i\\ prilaz kocki};
+  % bottom row, right to left
+  \node[st] (s5) at (12.6,-4.4) {\textbf{5}~~Dvoručni hvat\\ i podizanje\\ (STEP3b--STEP7)};
+  \node[st] (s6) at (9.45,-4.4) {\textbf{6}~~Prijenos u sobu\\ za odlaganje\\ \texttt{red:dock}, \texttt{CARRY\_V4}};
+  \node[st] (s7) at (6.3,-4.4)  {\textbf{7}~~Detekcija markera\\ za odlaganje\\ (koraci 1--6)};
+  \node[st] (s8) at (3.15,-4.4) {\textbf{8}~~Odlaganje kocke\\ na marker\\ (koraci 7--11)};
+  \node[ok] (end) at (0,-4.4)   {\texttt{PLACE VERIFIED}\\ \texttt{MISSION COMPLETE}\\ \texttt{state=success}};
+  % abort sink
+  \node[ab] (ab) at (4.75,-2.2) {\textbf{\texttt{\_fail(where)}}: log \texttt{Task aborted during: \ldots},
+    \texttt{/mission/task\_status} \texttt{state=aborted}, čvor ne pokreće ništa dalje.
+    Iznimke: STEP5d prvo vraća ruke u \texttt{GRASP\_V4}; bez potvrde odspajanja u koraku~8 misija
+    staje prije pokreta ruku.};
+  % flow
+  \draw[flow] (s0) -- (s1);
+  \draw[flow] (s1) -- (s2);
+  \draw[flow] (s2) -- node[above, font=\tiny, yshift=5pt] {gumb} (s3);
+  \draw[flow] (s3) -- node[above, font=\tiny, yshift=5pt] {\texttt{arrived}} (s4);
+  \draw[flow] (s4) -- (s5);
+  \draw[flow] (s5) -- node[below, font=\tiny, yshift=-8pt] {\texttt{TASK COMPLETE}} (s6);
+  \draw[flow] (s6) -- node[below, font=\tiny, yshift=-8pt] {\texttt{arrived}} (s7);
+  \draw[flow] (s7) -- (s8);
+  \draw[flow] (s8) -- (end);
+  % abort branches (state 2 only waits)
+  \foreach \s in {s0, s1, s3} {\draw[fail] (\s.south) -- (\s.south |- ab.north);}
+  \foreach \s in {s6, s7, s8} {\draw[fail] (\s.north) -- (\s.north |- ab.south);}
+  \draw[fail] (s4.south west) -- (ab.north east);
+  \draw[fail] (s5.north west) -- (ab.south east);
+\end{tikzpicture}

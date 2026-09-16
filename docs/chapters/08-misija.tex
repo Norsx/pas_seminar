@@ -1,2 +1,158 @@
 \section{Orkestracija misije}
 \label{sec:08-misija}
+
+Misija iz [MAIL]~\cite{mail2026} (pronađi kutiju, podigni je objema rukama, pronesi kroz vrata, odloži
+je na zadano mjesto) pokreće se jednom naredbom i jednim gumbom. Ovo poglavlje opisuje kako su
+spojeni slojevi iz poglavlja~\ref{sec:02-arhitektura}--\ref{sec:07-manipulacija}.
+
+\subsection{Pokretanje: \texttt{mission.launch.py}}
+\label{sec:08-launch}
+
+Datoteka \texttt{mission.launch.py} (ispis~\ref{lst:mission-launch}) uključuje tri postojeće pokretačke
+datoteke s vremenskim odmakom (tablica~\ref{tab:08-launch}). Robot se stvara u ishodištu, jer je to
+početna poza AMCL-a u \texttt{nav2\_params.yaml}, pa se na spremljenoj karti lokalizira bez ručnog
+postavljanja poze. Varijable okruženja \texttt{PAS\_SIM\_CARRY\_ARMS=false} i
+\texttt{PAS\_SIM\_TABLE\_ARMS=false} ostavljaju ruke raširene (\texttt{ARM\_ZERO}, 2{,}28~m), a
+\texttt{main\_task} ih sklapa na vidiku, prije nego se baza pomakne.
+% izvor: src/pas_dual_arm_bringup/launch/mission.launch.py:26-49,86-107; postures.py:25-29 (ARM_ZERO 2.28 m)
+
+\begin{table}[H]
+\centering
+\caption{Vremenski slijed \texttt{mission.launch.py}}
+\label{tab:08-launch}
+\footnotesize
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.08\textwidth}>{\raggedright\arraybackslash}p{0.23\textwidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{$t$} & \textbf{Uključeno} & \textbf{Što pokreće i s kojim argumentima} \\
+\midrule
+0~s & \texttt{sim.launch.py} & Gazebo, kontroleri, most; \texttt{robot\_spawn\_x/y/yaw} = 0, \texttt{rviz:=false}, \texttt{headless}, \texttt{quiet} \\
+6~s & \texttt{nav2.launch.py} & \texttt{mode:=localization}, karta \texttt{seminar\_map.yaml}, \texttt{room\_navigator}, panel \texttt{nav\_gui} (\texttt{gui}) \\
+8~s & \texttt{rviz2} & jedan RViz (\texttt{rviz\_config}, zadano \texttt{nav2.rviz}), uvjet \texttt{open\_rviz} \\
+10~s & \texttt{task.launch.py} & \texttt{move\_group}, četiri \texttt{aruco\_detector} čvora (glava ID~0, zapešća ID~1 i~2, marker odlaganja ID~3), nakon još 3~s \texttt{main\_task} s \texttt{mission:=true}, \texttt{pick\_room}/\texttt{place\_room} (\texttt{blue}/\texttt{red}) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+% izvor: mission.launch.py:35-107; task.launch.py:53-102; aruco.launch.py:20-80; nav2.launch.py:78-198
+
+Tri odluke u toj datoteci proizašle su iz runova 16.~9. RViz pokreće sama misija i čvor se ne zove
+\texttt{rviz}, jer uključene datoteke imaju argument istog imena kojem misija predaje \texttt{false}, pa
+RViz u dva runa nije ni pokrenut; drugi pogled nije dopušten jer troši okvire koje trebaju kontroleri.
+\texttt{main\_task} piše izlaz i u datoteku (\texttt{output='both'}), jer je jedan run stao pred stolom
+bez ikakvog zapisa pa se nije moglo utvrditi je li marker viđen. Kašnjenja su skraćena s 12 i 22~s na
+6 i 10~s jer \texttt{main\_task} ionako čeka svaki poslužitelj koji koristi.
+% izvor: mission.launch.py:40-42,56-75,101-104; task.launch.py:68-72,83-86; P-45 pokušaji 4-8; P-32
+
+\subsection{Misijski koraci i prekid}
+\label{sec:08-koraci}
+
+Metoda \texttt{run()} dijeli misiju na osam koraka koje objavljuje \texttt{\_report\_mission\_step(n, 8,
+faza, opis, stanje)}: JSON na latched temi \texttt{/mission/task\_status} (prikazuje ga panel
+\texttt{nav\_gui}) i obojeni natpis u terminalu (slika~\ref{fig:mis-stanja},
+ispis~\ref{lst:misija-slijed}). Svaka provjera koja ne prođe poziva \texttt{\_fail}, koji koraku daje
+stanje \texttt{aborted}; nijedna grana ne nastavlja s pretpostavljenom pozom.
+% izvor: main_task.py:2911-2929, 2942, 2974, 3289, 2603, 2715 (koraci 1-8); 3297-3338; nav_gui.py:54-78
+
+\begin{figure}[H]
+  \centering
+  \input{figures/tikz/mis-stanja}
+  \caption{Dijagram stanja misije u \texttt{main\_task} (crtkano: grane \texttt{\_fail})}
+  \label{fig:mis-stanja}
+\end{figure}
+
+\paragraph{Start} Nakon sklapanja ruku u \texttt{DRIVE\_V4} čvor objavi tu pozu kao referencu za vrata i
+blokira u \texttt{\_wait\_for\_start} dok ne stigne poruka na \texttt{/mission/start}: gumb „MISIJA: po
+kutiju“ u panelu \texttt{nav\_gui} (poglavlje~\ref{sec:06-navigacija}) ili \texttt{ros2 topic pub}.
+Sadržaj poruke je ime sobe, a prazna poruka znači \texttt{pick\_room}.
+% izvor: main_task.py:2915-2924, 2112-2123; nav_gui.py:52,161
+
+\paragraph{Vožnja} \texttt{\_goto} ne šalje cilj na \texttt{/navigate\_to\_pose}, nego ime odredišta
+(\texttt{blue:dock}, \texttt{red:dock}) na \texttt{/room\_navigator/goto}, jer samo
+\texttt{room\_navigator} zna portalne poze, provjeru pred vratima i geometriju pristajanja uz stol.
+Njegov status je latched JSON na \texttt{/room\_navigator/status}, pa zaostali \texttt{arrived} iz
+prethodne dionice izgleda jednako kao novi. Zato \texttt{\_goto} prihvaća \texttt{arrived} tek nakon što
+je za isto odredište vidio \texttt{driving}; \texttt{failed}, \texttt{aborted}, \texttt{cancelled} ili
+istek \texttt{goto\_timeout} (600~s) znače prekid.
+% izvor: main_task.py:2125-2168, 283-294, 438-447; P-45 "Uzrok" i "Trenutno rješenje"; P-39
+
+\paragraph{Nošenje kroz vrata} Prije svakog prolaza \texttt{room\_navigator.arms\_ok}
+(ispis~\ref{lst:room-navigator-gate}) uspoređuje svaki zglob ruku s referentnom pozom, uz toleranciju
+\texttt{arm\_tolerance} = 0{,}15~rad i kut sveden na $\pm\pi$. Dok je znao samo \texttt{DRIVE\_V4}, run
+M2 je s kockom u rukama prekinut pred vratima (\texttt{left\_joint\_5 is 2.547 rad off DRIVE\_V4}).
+Tolerancija nije popuštena: poza s kockom izmjerena je na robotu i spremljena kao \texttt{CARRY\_V4}
+(0{,}821~m, 8~cm zazora po strani u otvoru od 0{,}98~m), a \texttt{main\_task} je objavi na
+\texttt{/room\_navigator/arm\_posture} čim kocka uđe u ruke. Istodobno objavi tlocrt kocke na
+\texttt{/mission/carried\_points}, pa je kocka dio obrisa s kojim Nav2 planira.
+% izvor: room_navigator.py:89,136-138,191-199,291-325,657-664; P-45 pokušaji 4-6; postures.py:62-72;
+%        main_task.py:3239-3244, 2432-2457; footprint_publisher.py:102
+
+\dvijeslike{k17_nosenje.png}{Robot s kockom u pozi \texttt{CARRY\_V4}}%
+  {k18_vrata_s_kutijom.png}{Robot s kockom u vratima}%
+  {Nošenje kocke}{nosenje}
+
+\subsection{Odlaganje na marker}
+\label{sec:08-odlaganje}
+
+Metoda \texttt{\_place\_on\_marker} zrcali hvat: položaj markera mjeri kamera, visinu postavljaju
+vodilice, a zadnji pomak dijele baza i ruke. Ništa se ne uzima iz datoteke svijeta; ako kamera ne nađe
+marker, kocka se ne spušta nigdje. Marker ID~3 je 0{,}36~m, veći od kocke, da bi i ispod nje ostao
+vidljiv rub. Slijed od 11 koraka zadao je korisnik (tablica~\ref{tab:08-odlaganje}).
+% izvor: main_task.py:2588-2596; aruco.launch.py:60-80 (marker_size 0.36); P-45 pokušaj 14
+
+\begin{small}
+\renewcommand{\arraystretch}{1.1}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.05\textwidth}>{\raggedright\arraybackslash}p{0.62\textwidth}>{\raggedright\arraybackslash}p{0.27\textwidth}@{}}
+\caption{Odlaganje u \texttt{\_place\_on\_marker}}\label{tab:08-odlaganje}\\
+\toprule
+\textbf{\#} & \textbf{Što radi} & \textbf{Provjera $\rightarrow$ ishod} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Što radi} & \textbf{Provjera $\rightarrow$ ishod} \\
+\midrule
+\endhead
+\footnotesize 1 & \footnotesize glavna kamera (nagib 0{,}65) čita marker s docka, svježe očitanje ($\leq0{,}6$~s); položaj zapamćen u \texttt{odom}, visina ploče fiksirana; stol ulazi u MoveIt scenu & \footnotesize nije viđen $\rightarrow$ prekid, kocka ostaje u rukama \\
+\footnotesize 2 & \footnotesize vodilice dižu šake na visinu markera + \texttt{place\_clearance} (0{,}20~m) + pola kocke & \footnotesize vodilice ne stignu $\rightarrow$ prekid \\
+\footnotesize 3--4 & \footnotesize baza naprijed koliko robot smije: $\min(\text{potrebno}, \texttt{place\_max\_advance} = 0{,}24~\text{m})$ pri 0{,}05~m/s & \footnotesize odometrija ne prati $\rightarrow$ prekid \\
+\footnotesize 5 & \footnotesize bočni pomak baze na os markera (ako je odstupanje $\geq1$~cm) & \footnotesize odometrija ne prati $\rightarrow$ prekid \\
+\footnotesize 6 & \footnotesize ruke nose kocku ostatak puta po $x$ i $y$ jednim ravnim pokretom, uz MoveIt provjeru krajnjeg stanja; obris se osvježi & \footnotesize ne može do kraja $\rightarrow$ upozorenje \\
+\footnotesize 7 & \footnotesize vodilice spuštaju kocku brzinom \texttt{place\_lower\_speed} = 1~cm/s do \texttt{place\_touch} = 2~mm; bez čuvara dodira & \footnotesize vodilice odbiju $\rightarrow$ prekid \\
+\footnotesize 7b & \footnotesize visina donje plohe kocke iz \texttt{\_hold} i TF-a & \footnotesize $>2$~cm iznad ploče $\rightarrow$ prekid, kocka se ne pušta \\
+\footnotesize 8 & \footnotesize odspajanje: \texttt{/aruco\_box/detach} kroz ROS most (uz \texttt{ign topic} kao rezervu), potvrda \texttt{detached} na \texttt{/aruco\_box/state}; obris bez kocke; oba jastučića 3~cm od ploha & \footnotesize nema potvrde $\rightarrow$ stop prije pokreta ruku \\
+\footnotesize 9--11 & \footnotesize \texttt{DETECTION\_V4}; odmak 0{,}50~m unatrag; \texttt{DRIVE\_V4}, vodilice 0{,}20~m & \footnotesize neuspjeh $\rightarrow$ upozorenje \\
+\footnotesize P8 & \footnotesize kamera ponovno mjeri kocku (marker + dubina); centar u \texttt{odom} uspoređuje se sa zapamćenim markerom & \footnotesize \texttt{PLACE VERIFIED: \ldots\ mm}; bez mjere: \texttt{UNVERIFIED} \\
+\bottomrule
+\end{longtable}
+\end{small}
+% izvor: main_task.py:2601-2624 (1), 2626-2643 (2), 2645-2673 (3-4), 2675-2688 (5), 2690-2711 (6),
+%        2713-2741 (7), 2743-2756 (7b), 2758-2775 + 547-593 (8), 2777-2800 (9-11), 2802-2840 (P8); 295-308 (parametri)
+
+Redoslijed je posljedica pogrešaka izmjerenih u runovima. Marker se čita samo jednom i dalje prati
+odometrijom: nakon 24~cm vožnje baze ploča je pod nosom robota i ne čita se, a ustajalo očitanje izgleda
+kao svježe, pa su ruke dobile pomak od 43~cm koji je IK ispravno odbio. Pri spuštanju nema čuvara dodira,
+jer kocku drži kruti spoj, a jastučići je samo dodiruju, pa je čuvar okinuo u istoj milisekundi kad je
+spuštanje počelo; odluku donosi izmjerena visina (korak~7b), koja je u tom runu odbila pustiti kocku
+20~cm iznad stola. Odspajanje ide kroz ROS most s potvrdom stanja jer se u runu M5 naredba poslana samo
+kroz \texttt{ign topic} izgubila i kocka je ostala na zapešću (ispis~\ref{lst:place-verified}).
+Granica \texttt{place\_max\_advance} izvedena je iz runa 16.~9.: prednji rub baze je 0{,}41~m ispred
+\texttt{base\_link}, rub ploče bio je 0{,}695~m ispred, a 0{,}24~m ostavlja 4{,}5~cm zazora.
+% izvor: P-45 pokušaji 17-18 (ustajali marker, čuvar dodira, 20 cm), 20-21 (M5, detach); main_task.py:2569-2586,
+%        2727-2733, 304-308 (place_max_advance)
+
+\dvijeslike{k21_odlaganje.png}{Kocka u rukama iznad ruba stola, marker odlaganja na stolu}%
+  {k22_odlaganje_gotovo.png}{Kocka na markeru, robot odmaknut}%
+  {Odlaganje u crvenoj sobi}{odlaganje}
+
+Uspješan run završava ovim redcima (primjer iz README-a~\cite{pasdualarm}):
+% izvor: README.md §5 (redak "mission: drive posture ... verified" izostavljen: ne postoji u kodu);
+%        formati: main_task.py:2146,2165,3111-3135,3225-3227,2698-2700,2751-2752,2834-2836,3295
+\begin{lstlisting}[style=code-bash, numbers=none]
+WAITING for the user: press "MISIJA: po kutiju" ...
+NAV: arrived at "blue:dock"
+CARRIAGE LIFT MEASURED left=0.5500 right=0.5500 m
+NAV: arrived at "red:dock"
+PLACE step 6: the arms carry the cube +19.6 cm forward and +1.3 cm across
+PLACE the cube bottom is +4 mm from the table top
+PLACE VERIFIED: the centre of the cube is 5 mm from the marker centre
+MISSION COMPLETE: the cube is on the marker.
+\end{lstlisting}
