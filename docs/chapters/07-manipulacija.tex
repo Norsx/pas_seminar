@@ -1,2 +1,150 @@
 \section{Manipulacija i dvoručni hvat}
 \label{sec:07-manipulacija}
+
+Hvat, dizanje i nošenje kocke vodi čvor \texttt{main\_task} iz paketa \texttt{pas\_dual\_arm\_scripts}.
+MoveIt~2 koristimo za promjene poza bez sudara i za provjeru stanja robota, a zadnje centimetre do
+kocke čvor izvodi ravnim putanjama koje sam računa iz URDF-a. Kontroleri ruku i vodilica opisani su u
+poglavlju~\ref{sec:04-upravljanje}, markeri i kamere u poglavlju~\ref{sec:05-percepcija}, a poze ruku
+u poglavlju~\ref{sec:03-model-i-okruzenje}.
+
+\subsection{Konfiguracija MoveIt~2}
+\label{sec:07-moveit}
+
+Paket \texttt{pas\_dual\_arm\_moveit\_config} sadrži semantički opis cijelog robota i parametre za
+\texttt{move\_group} (tablica~\ref{tab:07-moveit}). Pokretačka datoteka \texttt{move\_group.launch.py}
+širi isti xacro kao simulacija (\texttt{sim\_ignition:=true}) i iz njega uklanja negativne skale
+meshova, tako da MoveIt i Gazebo rade nad istim modelom.
+% izvor: src/pas_dual_arm_moveit_config/launch/move_group.launch.py:21-28,56-70
+
+\begin{table}[H]
+\centering
+\caption{Konfiguracijske datoteke paketa \texttt{pas\_dual\_arm\_moveit\_config}}
+\label{tab:07-moveit}
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.25\textwidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Datoteka} & \textbf{Sadržaj} \\
+\midrule
+\texttt{pas\_dual\_arm.srdf} & grupe \texttt{left\_arm} i \texttt{right\_arm} (lanac \texttt{*\_base\_link} $\rightarrow$ \texttt{*\_end\_effector\_link}), \texttt{both\_arms}, \texttt{torso}, \texttt{pan\_tilt}, \texttt{left\_gripper}, \texttt{right\_gripper}; stanja \texttt{Home} i \texttt{Retract} za ruke, \texttt{Open} i \texttt{Close} za hvataljke; 233 isključena para kolizija; nema virtualnog zgloba prema svijetu \\
+\texttt{kinematics.yaml} & KDL za \texttt{left\_arm} i \texttt{right\_arm}, rezolucija pretraživanja 0{,}005, vremensko ograničenje 0{,}05~s \\
+\texttt{ompl\_planning.yaml} & zadani planer \texttt{RRTConnect} za sve grupe; adapteri zahtjeva (vremenska parametrizacija, popravak početnog stanja i granica); \texttt{start\_state\_max\_bounds\_error} 0{,}1 \\
+\texttt{moveit\_controllers.yaml} & \texttt{MoveItSimpleControllerManager}: četiri \texttt{FollowJointTrajectory} kontrolera (dvije ruke, vodilice, pan-tilt) i dva \texttt{GripperCommand} \\
+\texttt{joint\_limits.yaml} & ruke 1{,}3963~rad/s (zglobovi 1--4) i 1{,}2218~rad/s (5--7), ubrzanje 8{,}6~rad/s$^2$; vodilice 0{,}5~m/s; zadano skaliranje 0{,}1 \\
+\texttt{move\_group.launch.py} & \texttt{allowed\_execution\_duration\_scaling} 2{,}0, \texttt{allowed\_start\_tolerance} 0{,}05, objava scene, \texttt{use\_sim\_time} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+% izvor: src/pas_dual_arm_moveit_config/config/pas_dual_arm.srdf (grupe, stanja, grep -c disable_collisions = 233),
+%        config/kinematics.yaml, config/ompl_planning.yaml:1-70, config/moveit_controllers.yaml, config/joint_limits.yaml
+
+Budući da SRDF nema virtualnog zgloba prema svijetu, MoveIt planira u okviru robota. Objekte scene
+(pod, stol s pločom $0{,}80 \times 0{,}80 \times 0{,}04$~m i četiri noge, kocku od 0{,}30~m) čvor
+objavljuje u \texttt{base\_link} na temi \texttt{/planning\_scene}, pa oni putuju zajedno s bazom. Zato ih
+uklanja čim se robot odmakne od stola, a kocku čim je pričvrsti na zapešće. Bez tih objekata RRT je
+planirao putanje ruku kroz stol~\cite{pasdualarm}.
+% izvor: src/pas_dual_arm_scripts/pas_dual_arm_scripts/main_task.py:1144-1210 (publish_collision_scene),
+%        3176-3187 (REMOVE target_cube), 3253-3263 (REMOVE pick_table); runovi.md S5 (šaka zaustavljena nogom stola)
+
+Od MoveIt sučelja slijed misije koristi četiri. Akcija \texttt{/move\_action} služi za promjene poza
+(\texttt{move\_to\_posture}: grupa \texttt{both\_arms}, planiranje i izvođenje, skaliranje brzine 0{,}7) i
+za planiranje bez izvođenja pojedine ruke (\texttt{plan\_arm\_joints}). Dva takva plana čvor razvuče na
+isto trajanje i pošalje izravno na \texttt{/left\_arm\_controller} i \texttt{/right\_arm\_controller}
+jer \texttt{move\_group} izvodi jednu putanju odjednom, a ruka koja stigne prva gurne kocku po stolu.
+Servis \texttt{/compute\_cartesian\_path} s akcijom \texttt{/execute\_trajectory} daje pravocrtni odmak
+jastučića uz zadržanu orijentaciju (\texttt{retreat\_linear}). Servis \texttt{/check\_state\_validity}
+provjerava cijelo stanje robota prije privlačenja i spuštanja kocke. Klijent za \texttt{/compute\_ik}
+postoji, ali ga slijed ne poziva: ravne putanje vrhova alata računa \texttt{kinematics.ArmJog}
+koracima prigušenog pseudoinverza Jakobijana (\texttt{force\_model.resolved\_rate}), jer globalni IK na
+zahtjev od pola milimetra može vratiti potpuno drugu granu rješenja.
+% izvor: main_task.py:321-338, 785-829 (plan_only), 903-948 (move_arms_parallel), 643-725 (cartesian + execute),
+%        1245-1259 (retreat_linear), 2356-2374 (_state_valid), 727-758 (_ik, bez poziva u run());
+%        postures.py move_to_posture (both_arms, scaling 0.7); kinematics.py:180-277; force_model.py:108-135;
+%        notes/03_problemi/P-26 (move_group izvršava jednu trajektoriju)
+
+\subsection{Zašto dodir s dviju strana i kruti spoj}
+\label{sec:07-zasto}
+
+\paragraph{Hvataljka je premala za kocku} Robotiq 2F-85 ima hod oko 85~mm, a kocka 0{,}30~m, pa hvat
+prstima nije moguć. Hvataljke su zato zatvorene (zglob 0{,}791) i služe kao jastučići, a kocku s dviju
+bočnih ploha dodiruju obje ruke. Stiskanje je isprobano i kocka isklizne, pa jastučići ulaze u plohu
+samo \texttt{touch\_depth} = 2~mm.
+% izvor: notes/03_problemi/P-14, notes/04_odluke/D-06; postures.py GRIPPER_CLOSED = 0.791; main_task.py:223-225
+
+\paragraph{DART ne drži kocku trenjem} Uz koeficijent trenja do 5, masu smanjenu na 0{,}2~kg i silu
+stiska 120 kutija se nije podigla. Kocku zato drži kruti spoj \texttt{DetachableJoint} između
+\texttt{left\_bracelet\_link} i \texttt{aruco\_box} (ispis~\ref{lst:urdf-kontakt}), koji se uključuje
+tek nakon neovisnog dokaza kontakta obiju ruku. Hvat je time fizički kontakt, a držanje simulacijska
+pomoć.
+% izvor: notes/03_problemi/P-15 (pokušaji 1-3), notes/04_odluke/D-05, D-12; robot.urdf.xacro:223-241
+
+\paragraph{Samo jedna kruta veza} Kruti spoj i druga ruka koja na kocku djeluje svojom putanjom čine
+preodređen sustav: rješavač ograničenja divergira i kutija odleti metrima daleko. Zato postoji samo spoj
+na lijevom zapešću, a desni jastučić nakon uključenja spoja popusti za \texttt{touch\_depth} i ostane na
+plohi. Prvotno se desna ruka odmicala 0{,}10~m, ali tada kocku vidljivo drži jedna ruka.
+% izvor: notes/03_problemi/P-17 (pokušaji 3-5), notes/04_odluke/D-07; main_task.py:3188-3205
+
+\paragraph{Hvat mora proći kroz vrata} Kod vodoravnog prilaza sferno zapešće leži na osi prilaza, pa je
+svako od 1620 IK rješenja široko najmanje 1{,}003~m, a vrata su 1{,}0~m. Nagib prilaza prema dolje od
+50° spušta širinu na 0{,}823~m, gdje granicu drže nosači ramena. Korisnikova poza \texttt{GRASP\_V4} ima
+prilaz 55° prema dolje, a poza nošenja \texttt{CARRY\_V4}, izmjerena na robotu s kockom, široka je
+0{,}821~m.
+% izvor: notes/03_problemi/P-43 (uzrok 2, tablica nagiba); postures.py:52-77 (GRASP_V4 55 deg, CARRY_V4 0.821 m)
+
+\subsection{Slijed hvata u kodu}
+\label{sec:07-slijed}
+
+Tablica~\ref{tab:07-slijed} prati metodu \texttt{run()} od dolaska na \texttt{blue:dock}
+(poglavlje~\ref{sec:08-misija}) do odmicanja od stola. Svaki korak završava mjerenjem, a ne statusom
+akcije; neuspjeh poziva \texttt{\_fail}, koji ispisuje \texttt{Task aborted during: \ldots} i prekida
+misiju.
+% izvor: main_task.py:2886-3284, 3330-3338
+
+\begin{small}
+\renewcommand{\arraystretch}{1.12}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.10\textwidth}>{\raggedright\arraybackslash}p{0.52\textwidth}>{\raggedright\arraybackslash}p{0.33\textwidth}@{}}
+\caption{Slijed hvata u \texttt{main\_task.run()}}\label{tab:07-slijed}\\
+\toprule
+\textbf{Korak} & \textbf{Što radi} & \textbf{Provjera $\rightarrow$ prekid} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Korak} & \textbf{Što radi} & \textbf{Provjera $\rightarrow$ prekid} \\
+\midrule
+\endhead
+\footnotesize STEP0 & \footnotesize spoj kocke se otpušta; vodilice na \texttt{carriage\_reference\_height} = 0{,}20~m & \footnotesize klizač $>1$~cm od cilja $\rightarrow$ \emph{carriages did not reach the travel height} \\
+\footnotesize skeniranje, prilaz & \footnotesize glavna kamera zakreće se (pan 0; $\pm0{,}5$; $\pm1{,}0$~rad) do tri detekcije markera; vizualni prilaz dok marker nije 0{,}72~m ispred (\texttt{detect\_stand\_range} 0{,}87~m manje pola kocke); prosjek 5 očitanja markera & \footnotesize \emph{scan: marker not found}, \emph{visual approach to box failed}, \emph{box not seen at the table} \\
+\footnotesize STEP3 & \footnotesize oblak \texttt{/camera/points}: izrez oko markera, PCA; smjer ploha iz orijentacije markera & \footnotesize duljina izvan 0{,}15--0{,}45~m ili visina izvan 0{,}06--0{,}32~m, ili centar $>15$~cm od markera $\rightarrow$ \emph{no fake grasp} \\
+\footnotesize STEP3b/3c & \footnotesize scena (pod, stol, kocka); \texttt{DETECTION\_V4} šira 5~cm po šaci; ako je kocka $\geq0{,}85$~m ispred: vodilice 0{,}20$\rightarrow$0{,}40~m u 4~s, ruke kreću nakon 30~\% hoda kroz točku 12~cm iznad poze pa ravno dolje 3~cm/s; bliže: vodilice pa MoveIt & \footnotesize klizači $>1$~cm od 0{,}40~m ili ruke ne stignu $\rightarrow$ prekid \\
+\footnotesize STEP4 & \footnotesize vožnja naprijed za $x_\mathrm{kocke}-0{,}63$~m pri 0{,}08~m/s po odometriji; centriranje po \emph{svježem} markeru ($\leq0{,}6$~s): unutar $\pm2$~cm bez pomaka, inače bočni pomak (strafe) & \footnotesize odometrija ne prati $\rightarrow$ prekid; neuspjeli strafe samo upozorava \\
+\footnotesize STEP5a & \footnotesize kamere zapešća čitaju markere ID~1 i~2; njihovi centri su ciljevi vrhova alata; centar kocke 0{,}056~m ispod njihove sredine, zakret iz normale & \footnotesize marker nije pročitan ili razmak izvan 0{,}24--0{,}36~m $\rightarrow$ \emph{not the 0.30 m cube} \\
+\footnotesize STEP5b & \footnotesize \texttt{GRASP\_V4} planira MoveIt za obje ruke, pokreću se zajedno; ako plan ne uspije, interpolacija u prostoru zglobova između dviju poza bez sudara & \footnotesize \emph{arms did not reach GRASP\_V4} \\
+\footnotesize STEP5c & \footnotesize \texttt{pad\_contact\_pose}: orijentacija alata iz \texttt{GRASP\_V4} zakrenuta za kut kocke, jastučići 2~mm u plohi; ravna putanja u koracima od 5~mm ($\leq0{,}3$~rad po koraku) brzinom 1~cm/s, obje ruke istodobno & \footnotesize nema rješenja ili izvođenje ne uspije $\rightarrow$ prekid \\
+\footnotesize STEP5d & \footnotesize dokaz: kontakt s kockom na obje šake (broje se samo kontakti čiji je drugi sudionik \texttt{aruco\_box}, prozor 3~s) \emph{i} \texttt{tool\_tip} iz TF-a $\leq10$~mm od cilja na obje ruke & \footnotesize ruke natrag u \texttt{GRASP\_V4}, \emph{grasp not confirmed \ldots no fake lift} \\
+\footnotesize STEP6 & \footnotesize uključenje spoja uz potvrdu na \texttt{/aruco\_box/state}; spremanje transformacije kocka--alat (\texttt{\_hold}); kocka izlazi iz scene; desni jastučić popušta 2~mm; vodilice dižu +0{,}15~m (najviše 0{,}64~m); mjerenje širine & \footnotesize nema potvrde spoja ili vodilice odbiju $\rightarrow$ prekid; širina $\geq1{,}0$~m samo upozorava \\
+\footnotesize STEP6b & \footnotesize obje šake s kockom 0{,}15~m prema robotu (stražnja ploha $\geq3$~cm ispred torza), laktovi 20° od stupa; referentna poza vrata postaje \texttt{CARRY\_V4}, kocka ulazi u obris & \footnotesize MoveIt javi sudar $\rightarrow$ korak se preskače, kocka ostaje u rukama \\
+\footnotesize STEP7 & \footnotesize 0{,}50~m unatrag pri 0{,}08~m/s; stol izlazi iz scene; vodilice na 0{,}10~m ako \texttt{/check\_state\_validity} potvrdi (inače 0{,}20~m); \texttt{TASK COMPLETE} & \footnotesize \emph{could not back away \ldots}, \emph{carriages did not come down \ldots} \\
+\bottomrule
+\end{longtable}
+\end{small}
+% izvor: main_task.py:2886-2909 (STEP0), 1933-2038 + 2941-2959 (skeniranje, prilaz, confirm_box 1646-1692),
+%        1694-1794 + 2961-2971 (STEP3), 2973-3011 + 2291-2354 + 248-257 (STEP3b/3c),
+%        3013-3051 (STEP4), 3053-3071 (STEP5a), 3073-3082 (STEP5b), 3084-3118 + kinematics.py:356-378 (STEP5c),
+%        3120-3142 + 498-517 (STEP5d, box-only kontakt), 3144-3235 + 547-593 (STEP6),
+%        2376-2430 + 3237-3244 + 235-244 (STEP6b), 3246-3284 + 227-234 (STEP7)
+
+Dva izbora iz tablice imaju povijest u projektu. Vodilice dižu kocku jer je uzrok njihova ranijeg
+„neslušanja“ pronađen: klizač sjedne točno na donji graničnik i tamo se zaledi u oba smjera, pa od
+početne vrijednosti 0{,}06~m podižu ruke pod teretom bez mjerljive greške. Transformacija
+\texttt{\_hold} postoji jer su kamere zapešća, dok jastučići drže kocku, oko 2~cm od markera i ne
+dekodiraju ih; položaj držane kocke zato se računa iz te transformacije i TF-a vrha alata, a koriste ga
+obris robota za Nav2 i odlaganje (poglavlje~\ref{sec:08-odlaganje}).
+% izvor: notes/03_problemi/P-13 (pokušaji 10-11), main_task.py:3206-3217; P-45 pokušaji 10-11, main_task.py:2482-2505
+
+\dvijeslike{k13_hvat_detekcija.png}{Robot pred stolom u pozi \texttt{DETECTION\_V4}}%
+  {k14_hvat_prilaz.png}{\texttt{GRASP\_V4}, jastučići pred bočnim plohama}%
+  {Početak hvata u plavoj sobi}{hvat-pocetak}
+
+\dvijeslike{k15_hvat_kontakt.png}{Oba jastučića na kocki}%
+  {k16_hvat_dizanje.png}{Obje ruke na bočnim plohama kocke nad stolom}%
+  {Kontakt i hvat kocke u plavoj sobi (Gazebo)}{hvat-kontakt}
