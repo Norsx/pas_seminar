@@ -1,2 +1,37 @@
 \section{Zaključak}
 \label{sec:zakljucak}
+
+% izvor: notes/00_MAPA.md; notes/05_povijest/runovi.md; README.md §10
+U okviru ovog rada uspješno je projektiran, modeliran i verificiran cjeloviti simulacijski model
+dvoručnog mobilnog manipulatora PAS-DUAL-ARM u okruženju Gazebo Fortress i ROS~2 Humble, u skladu sa
+svim zahtjevima kolegija \emph{Projektiranje autonomnih sustava} \cite{zadatak2025, mail2026}.
+
+Integracijom omnidirekcijske mobilne baze, torza s dvjema linearnim vodilicama, dviju robotskih ruku
+Kinova Gen3 s hvataljkama Robotiq 2F-85 te pan-tilt glave s RGB-D kamerom ostvaren je složen
+kinematički i dinamički sustav s ukupno 24 upravljana zgloba. Sustav je u potpunosti objedinjen unutar
+okvira \texttt{ros2\_control} uz frekvenciju rada od 100~Hz.
+
+Autonomna misija preuzimanja i transporta manipulacijske kocke uspješno je demonstrirana iz jedne
+pokretačke naredbe (\texttt{mission.launch.py}):
+\begin{enumerate}
+  \item \textbf{Precizno lasersko mapiranje i navigacija}: Korištenjem paketa \texttt{slam\_toolbox}
+    i lidara s 1080 zraka na rešetki od $\SI{0.02}{m}$ generirana je geometrijski egzaktna karta s
+    izmjereno čistim otvorom vrata od $0{,}980$~m. Uvođenjem jedinstvenog potencijalnog polja s
+    usmjeravajućim trakama kroz vrata i nultim brazdama (\texttt{nav\_zones.py}) riješen je problem
+    kosog ulaska u vrata, čime je omogućen siguran prolazak robota sa samo $6{,}3$~cm bočnog zazora.
+  \item \textbf{Pouzdana dvoručna manipulacija}: Zbog geometrijskih ograničenja sfernog zapešća
+    razvijena je nagnuta poza hvata (\texttt{GRASP\_V4}, nagib $55^\circ$ prema dolje) i poza nošenja
+    (\texttt{CARRY\_V4}, širina $0{,}821$~m), što je omogućilo prolazak s teretom kroz vrata. Hvat se
+    potvrđuje očitanjima kontaktnih senzora na prstima ruku prije aktivacije dodatka
+    \texttt{DetachableJoint}, čime je zadovoljeno načelo poštene verifikacije bez lažnog hvata.
+  \item \textbf{Milimetarska točnost odlaganja}: Slijed odlaganja kocke u 11 koraka
+    (\texttt{main\_task.py}) vodi robot i manipulator pomoću vizualne detekcije ciljnog markera ID~3
+    te završava spuštanjem na visinu od $+4$~mm iznad stola i verificiranim odstupanjem središta od
+    samo $\SI{5}{mm}$ od centra markera.
+\end{enumerate}
+
+Ključna inženjerska lekcija proizašla iz ovog projekta jest nužnost uvođenja zatvorenih petlji
+provjere: u složenom simulacijskom okruženju status akcije (npr. \texttt{SUCCEEDED}) ne jamči da je
+aktuator pod opterećenjem doista dosegao ciljni položaj. Verifikacija stvarnih kutova zglobova,
+prostornih transformacija iz TF stabla i stanja fizikalnih senzora prije svakog kritičnog prijelaza
+omogućila je determinističko i robusno izvršavanje misije od početka do kraja.
