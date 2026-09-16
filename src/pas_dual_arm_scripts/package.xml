@@ -4,7 +4,7 @@
   <name>pas_dual_arm_scripts</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="kh239762@fsb.hr">khartl</maintainer>
+  <maintainer email="in239736@fsb.hr">Ivan Noršić</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>

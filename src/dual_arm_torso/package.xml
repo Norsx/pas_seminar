@@ -9,7 +9,7 @@
     Branimir Ćaran; stigli su kao prilog uz mail od 4. 5. 2026. u kojem je
     zadan ovaj projekt. Detalji: README.md u ovom paketu.
   </description>
-  <maintainer email="hartl.kresimir@gmail.com">Krešimir Hartl</maintainer>
+  <maintainer email="ivan.norsic01@gmail.com">Ivan Noršić</maintainer>
   <author>Branimir Ćaran</author>
   <!-- Apache-2.0 pokriva xacro i integraciju iz ovog repozitorija.
        STL meshovi u meshes/ NISU pod tom licencom: autor je Branimir Ćaran,

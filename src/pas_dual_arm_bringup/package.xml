@@ -4,7 +4,7 @@
   <name>pas_dual_arm_bringup</name>
   <version>0.0.0</version>
   <description>Bringup package for the PAS Dual Arm robot</description>
-  <maintainer email="user@todo.todo">user</maintainer>
+  <maintainer email="in239736@fsb.hr">Ivan Noršić</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

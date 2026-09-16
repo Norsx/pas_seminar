@@ -4,3 +4,5 @@ numpy           # čvorovi, mjerenja, obrada oblaka točaka
 scipy           # transformacije, distance_transform_edt u nav_zones
 opencv-python   # cv2.aruco - vlastiti detektor markera
 Pillow          # generiranje ArUco tekstura (scripts/make_marker.py)
+python-dotenv   # LiteRealm konfiguracija i okruženje
+

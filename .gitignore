@@ -22,32 +22,35 @@ src/pas_dual_arm_bringup/maps/map_2*
 /codex-session-*.md
 /*-zadatak-*.txt
 
-# --- Priprema za predaju (16. 9. 2026.) ---
-# Sve niže ostaje na disku; samo izlazi iz repozitorija, jer nije dio zadatka
-# ni simulacije. Povijest je i dalje u gitu.
+# --- LaTeX & LiteRealm build artifacts ---
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
 
-# AI/LiteRealm scaffolding
-/.ai/
-/CLAUDE.md
-/GEMINI.md
-/.env
-/.env.example
+# RAG vector store (auto-generated)
+.ai/rag/db/
+.ai/rag/parsed/
 
-# Zastarjeli dokumenti ranih faza; sadržaj koji vrijedi prenesen je u notes/
-/TASK.md
-/HUMAN.md
-/LINKS.md
-/STATE.md
-/src/README.md
+# Environment / secrets
+.env
+.env.*
+!.env.example
 
-# Radni docs/ - upute su sada README.md, MAPPING.md i RUNNING.md
-/docs/
+# LaTeX build directories
+docs/**/build/
+docs/**/*.pdf
+dist/**/*.pdf
+.ai/.bootstrapped
 
-# RAG/LiteRealm scaffolding. data/raw/zadatak/ ([ZAD], [MAIL]) OSTAJE u repou.
-/data/README.md
-/data/rag/
-/data/processed/
-/dist/
 
 # Napušteni pokus hvata silom (D-21): misija radi na `position` sučelju i ovo
 # ne uvozi. force_model.py je zadržan - koristi ga scripts/grasp_width.py.

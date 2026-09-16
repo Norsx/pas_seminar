@@ -1,0 +1,25 @@
+name: "pas_seminar"
+type: "seminar"              # seminar | thesis | paper | homework
+latex_format: "fsb-seminar"  # fsb-seminar | fsb-thesis | fsb-paper
+brain_mode: "global"         # none | global
+# RAG is always available via AgentBrain (~/.agentbrain). Embeddings use Gemini
+# if GEMINI_API_KEY is set in .env, otherwise local sentence-transformers.
+
+# --- Metadata za naslovnicu (latex_architect popunjava main.tex) ---
+author_name: "Ivan Noršić"              # Ime i prezime studenta
+student_id: "0035239736"                # JMBAG
+student_email: "in239736@fsb.hr"        # Faks mail
+email: "ivan.norsic01@gmail.com"        # Osobni mail
+course_name: "PROJEKTIRANJE AUTONOMNIH SUSTAVA"              # Naziv kolegija (UPPERCASE u dokumentu)
+seminar_title: "Projektiranje i simulacija dvoručnog mobilnog manipulatora za manipulaciju objektima u prostoru"            # Puni naslov seminara
+seminar_title_short: "PAS — Dvoručni mobilni manipulator"      # Skraćeni naslov za header (max ~50 znakova)
+professor_title: "Prof. dr. sc."          # Titula (npr. "Prof. dr. sc.")
+professor_name: ""           # Ime i prezime profesora
+
+# --- Build & page limit ---
+max_pages: 12                # build skripta upozorava ako PDF premašuje N stranica
+dist_version: "dev"          # build piše PDF u dist/<dist_version>/ (npr. "v1.0" za predaju)
+
+# --- Opcijski popisi (latex_architect uključuje ako je true) ---
+include_lof: false           # \listoffigures
+include_lot: false           # \listoftables

@@ -3,7 +3,7 @@
   <name>pas_dual_arm_moveit_config</name>
   <version>0.1.0</version>
   <description>MoveIt2 configuration for the PAS dual-arm mobile robot (two Kinova Gen3 arms, torso lifts, pan-tilt).</description>
-  <maintainer email="kh239762@fsb.hr">KHartl</maintainer>
+  <maintainer email="in239736@fsb.hr">Ivan Noršić</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

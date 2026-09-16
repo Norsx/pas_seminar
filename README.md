@@ -2,7 +2,8 @@
 
 > **Seminarski zadatak iz kolegija Projektiranje autonomnih sustava**
 > Fakultet strojarstva i brodogradnje, Sveučilište u Zagrebu
-> Izradili: **Krešimir Hartl** i **Ivan Noršić**
+> Izradio: **Ivan Noršić** (JMBAG: 0035239736)
+> Kontakt: in239736@fsb.hr | ivan.norsic01@gmail.com
 
 Mobilni robot s **dvije Kinova Gen3 ruke** na **vertikalnim linearnim vodilicama**,
 **omnidirekcijskom bazom** i **pan-tilt kamerom**. Cijela misija ide iz **jedne naredbe**:
@@ -44,8 +45,8 @@ Pet paketa u `src/` su **tuđi repozitoriji** i namjerno nisu dio ovog repoa —
 od autora, na točno pinane commitove iz `ros2.repos` (popis i licence: [§9](#9-vanjski-paketi--nisu-naši)).
 
 ```bash
-git clone https://github.com/KxHartl/PAS-DUAL-ARM.git
-cd PAS-DUAL-ARM
+git clone https://github.com/Norsx/pas_seminar.git
+cd pas_seminar
 
 vcs import src < ros2.repos     # aruco_ros, omni_base_simulation, pan_tilt_ros,
                                 # realsense-ros, ros2_kortex — s GitHuba autora

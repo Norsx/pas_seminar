@@ -13,8 +13,8 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='khartl',
-    maintainer_email='kh239762@fsb.hr',
+    maintainer='Ivan Noršić',
+    maintainer_email='in239736@fsb.hr',
     description='Mission nodes: orchestration, perception, navigation zones and helpers.',
     license='Apache-2.0',
     extras_require={
