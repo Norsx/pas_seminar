@@ -1,2 +1,167 @@
 \section{Upravljanje sustavom (ros2\_control)}
 \label{sec:04-upravljanje}
+
+% izvor: notes/01_zahtjevi/izvori.md:51 (mail: ros2_control, omni_controller);
+% urdf/robot.urdf.xacro:381,407,456,479-481; config/controllers.yaml:3;
+% launch/sim.launch.py:227-252 (spawners, 120 s); notes/03_problemi/P-37 #8 (seven components)
+Svi aktuatori robota vođeni su okvirom \texttt{ros2\_control}, kako zadatak izričito traži
+\cite{mail2026}. Dodatak \texttt{ign\_ros2\_control::IgnitionROS2ControlPlugin} u
+\texttt{robot.urdf.xacro} učitava \texttt{config/controllers.yaml} i pokreće
+\texttt{controller\_manager} unutar procesa Gazeba s frekvencijom osvježavanja od 100~Hz. Svih
+sedam komponenti \texttt{ros2\_control} (dvije ruke i dvije hvataljke iz
+\texttt{kortex\_description} \cite{kortex} te baza, vodilice torza i pan-tilt, koje smo
+deklarirali sami, poglavlje~\ref{sec:03-model-i-okruzenje}) koristi sklopovsko sučelje
+\texttt{ign\_ros2\_control/IgnitionSystem}. \texttt{sim.launch.py} pokreće po jedan
+\texttt{spawner} za svaki od osam kontrolera iz tablice~\ref{tab:kontroleri}, s vremenskim
+ograničenjima od 120~s, jer Gazebo ovaj model dugo učitava.
+
+% izvor: config/controllers.yaml:6-28,41-128; urdf/robot.urdf.xacro:381-405 (wheel interfaces);
+% ros2_kortex .../gen3/7dof/urdf/kortex.ros2_control.xacro:65-73;
+% /opt/ros/humble/share/robotiq_description/urdf/robotiq_gripper.ros2_control.xacro:41-45
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setstretch{1.05}
+  \caption{Kontroleri u \texttt{config/controllers.yaml}}
+  \label{tab:kontroleri}
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.7cm}@{}}
+    \toprule
+    \textbf{Kontroler} & \textbf{Tip} & \textbf{Zglobovi} & \textbf{Naredba / stanje} \\
+    \midrule
+    \texttt{joint\_state\_broadcaster} & \texttt{JointStateBroadcaster} & svi zglobovi & -- / sva stanja na \texttt{/joint\_states} \\
+    \texttt{base\_controller} & \texttt{MecanumDriveController} & \texttt{wheel\_\{front,rear\}\_\{left,right\}\_joint} & velocity / position, velocity \\
+    \texttt{left\_arm\_controller}, \texttt{right\_arm\_controller} & \texttt{JointTrajectoryController} & \texttt{left\_joint\_1} \dots\ \texttt{\_7}, \texttt{right\_joint\_1} \dots\ \texttt{\_7} & position / position, velocity \\
+    \texttt{torso\_controller} & \texttt{JointTrajectoryController} & \texttt{torso\_\{left,right\}\_carriage\_joint} & position / position, velocity \\
+    \texttt{pan\_tilt\_controller} & \texttt{JointTrajectoryController} & \texttt{pan\_tilt\_yaw\_joint}, \texttt{pan\_tilt\_pitch\_joint} & position / position, velocity \\
+    \texttt{left\_gripper\_controller}, \texttt{right\_gripper\_controller} & \texttt{position\_controllers/} \texttt{GripperActionController} & \texttt{\{left,right\}\_robotiq\_85\_left\_knuckle\_joint}, \texttt{allow\_stalling: true} & position / position, velocity \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Pogon baze}
+\label{sec:04-baza}
+
+% izvor: notes/03_problemi/P-09_omni_drive_on_fortress.md (pokušaji 1-6);
+% urdf/base/wheel.urdf.xacro:71-76 (cylinder collision), 95-97 (mu, mu2, fdir1);
+% urdf/base/base.urdf.xacro:106-109 (fdir1 "1 1 0" / "1 -1 0");
+% config/controllers.yaml:36-64 (wheel radius, lx, ly, reference_timeout, enable_odom_tf)
+Zadatak traži omnidirekcijski kontroler baze \cite{mail2026}. PAL-ov blok
+\texttt{ros2\_control} baze \cite{omnibase} namijenjen je Gazebu Classic, a sistemski dodaci
+\texttt{MecanumDrive} i \texttt{VelocityControl} Gazeba Fortress na ovoj se instalaciji ne
+instanciraju, pa je baza privremeno vožena kontrolerom \texttt{diff\_drive\_controller} na
+četiri kotača (samo $v_x$ i $\omega_z$). Konačno rješenje je instalirani
+\texttt{mecanum\_drive\_controller}. Kolizijska geometrija kotača je valjak, pa bočno gibanje
+nastaje iz anizotropnog trenja: $\mu = 0{,}80$ i $\mu_2 = 0{,}20$, sa smjerom \texttt{fdir1}
+pod $\pm45^\circ$ izraženim u okviru \texttt{base\_footprint}. Kinematiku kontrolera
+određuju polumjer kotača \SI{0.0762}{m} i zbroj polurazmaka kotača
+$l_x + l_y = 0{,}244 + 0{,}223575 = \SI{0.467575}{m}$. Referenca starija od \SI{0.5}{s}
+(\texttt{reference\_timeout}) zaustavlja bazu. Kontroler objavljuje odometriju i transformaciju
+\texttt{odom}$\rightarrow$\texttt{base\_footprint}, a ograničenja brzine ne zadaje: ona su u
+Nav2 (odjeljak~\ref{sec:06-nav2}).
+
+\subsection{Lanac naredbi}
+\label{sec:04-lanac}
+
+\begin{figure}[H]
+  \centering
+  \input{figures/tikz/upr-tok-naredbi}
+  \caption{Tok naredbi baze (lijevo) i ruku (desno) do zglobova u Gazebu; iscrtkano: putevi
+    koji se koriste samo kad nema sigurnosnog sloja, odnosno kad se obje ruke gibaju istodobno}
+  \label{fig:tok-naredbi}
+\end{figure}
+
+% izvor: nav2_bringup navigation_launch.py:183,242 (cmd_vel_nav -> velocity_smoother -> cmd_vel);
+% config/nav2_params.yaml:436 (40 Hz); launch/nav2.launch.py:139-150 (safety:=true);
+% config/collision_monitor.yaml:9-59; notes/04_odluke/D-19_dynamic_footprint.md (table top not
+% seen by the lidar); cmd_vel_relay.py:1-16,36,52-67
+Slika~\ref{fig:tok-naredbi} prikazuje kako naredbe stižu do zglobova. Nav2
+\texttt{controller\_server} objavljuje brzinu na \texttt{/cmd\_vel\_nav}, a
+\texttt{velocity\_smoother} je izglađuje na 40~Hz i objavljuje na \texttt{/cmd\_vel}. Između
+Nav2 i baze stoji \texttt{collision\_monitor} (\texttt{nav2.launch.py}, zadano
+\texttt{safety:=true}). Njegov poligon \texttt{FootprintApproach} projicira \emph{trenutni} obris
+robota (tema \texttt{/local\_costmap/published\_footprint}, odjeljak~\ref{sec:06-obris}) duž
+naređene brzine do \SI{1.5}{s} unaprijed u koracima od \SI{0.05}{s} i smanjuje brzinu prema
+vremenu preostalom do dodira. Pravokutnik \texttt{BaseStop} od $0{,}80 \times 0{,}56$~m oko baze
+zaustavlja je. Izvor podataka je \texttt{/scan\_filtered}, a izvor koji šuti \SI{0.5}{s} smatra
+se kvarom. Monitor je jedini sloj koji ne ovisi o costmapu, što je bitno jer ploču stola na
+\SI{0.75}{m} lidar na visini \SI{0.209}{m} ne vidi.
+
+Izlaz \texttt{/cmd\_vel\_safe} prima \texttt{cmd\_vel\_relay}. Dok je sigurna naredba stigla u
+zadnjih \SI{1.0}{s}, relej odbacuje sirove ulaze \texttt{/cmd\_vel} i
+\texttt{/base\_controller/cmd\_vel\_unstamped}, pa se monitor ne može zaobići. Bez monitora
+(mapiranje ili \texttt{safety:=false}) relej ih prosljeđuje izravno, pa teleoperacija i tura
+mapiranja rade bez Nav2. Relej usto prosljeđuje odometriju kontrolera na
+\texttt{/base\_controller/odom} i transformaciju \texttt{odom}$\rightarrow$\texttt{base\_footprint}
+na \texttt{/tf}. Kratke vožnje u otvorenoj petlji (\texttt{main\_task}, \texttt{mapping\_tour})
+koriste zajednički modul \texttt{base\_drive.py}, koji brzinu zadaje trapeznim profilom i
+provjerava prijeđeni put odometrijom.
+% izvor: base_drive.py:1-17,27,77,113 (trapezoidal profile, odometry read-back)
+
+% izvor: main_task.py:321-353 (MoveGroup, ExecuteTrajectory, direct JTC clients - "move_group
+% executes ONE trajectory at a time", GripperCommand, torso/pan-tilt FollowJointTrajectory)
+Pokrete ruku \texttt{main\_task} planira i izvršava kroz MoveIt (\texttt{/move\_action},
+\texttt{/execute\_trajectory}, poglavlje~\ref{sec:07-manipulacija}). Kad se obje ruke moraju
+gibati istodobno, šalje putanje izravno akcijama \texttt{follow\_joint\_trajectory} obaju
+kontrolera ruku, jer \texttt{move\_group} izvršava jednu putanju u isto vrijeme. Vodilicama i
+pan-tiltu naređuje izravno akcijom \texttt{FollowJointTrajectory}, a hvataljkama akcijom
+\texttt{GripperCommand}.
+
+\subsection{Profili aktuatora: \texttt{position} i \texttt{effort} s PID-om}
+\label{sec:04-profili}
+
+% izvor: notes/03_problemi/P-37_arm_position_gain_sag.md (#1: 1.148 rad after ARM_CARRY_V2 OK;
+% #8: gain 0.1 is a plugin-node parameter read once at init; URDF param, YAML, wildcard YAML and
+% ros2 param set all failed); notes/03_problemi/P-13_torso_prismatic_no_lift.md (#10, #11);
+% urdf/robot.urdf.xacro:412-432 (initial_value 0.06)
+Zadani profil koristi pozicijsko naredbeno sučelje. \texttt{ign\_ros2\_control} poziciju ne drži,
+nego je pretvara u brzinu zgloba razmjernu grešci položaja s pojačanjem 0,1. To je parametar
+čvora samog dodatka koji se čita samo pri inicijalizaciji; nismo ga uspjeli promijeniti ni
+parametrom zgloba u URDF-u, ni YAML datotekom, ni naredbom \texttt{ros2 param set} tijekom rada.
+Posljedica je izmjerena 13.~9.: nakon što je MoveIt javio da je ruka stigla u pozu
+\texttt{ARM\_CARRY\_V2}, zglob je od cilja odstupao do \SI{1.148}{rad}. Zato
+\texttt{room\_navigator} prije prolaza kroz vrata provjerava stvarne kutove zglobova
+(odjeljak~\ref{sec:06-room-navigator}). Isti mehanizam uzrokovao je prividno zaglavljivanje
+vodilica torza: početni položaj \SI{0.05}{m} bio je jednak donjem graničniku, a na graničniku
+dodatak brzinu poništava u oba smjera. Nakon promjene \texttt{initial\_value} na \SI{0.06}{m}
+vodilice na pozicijskom sučelju dosežu cilj s greškom \SI{0.0000}{mm}.
+
+% izvor: launch/sim.launch.py:147-170; config/force_controllers.yaml:3,57-191;
+% ros2_kortex .../gen3/7dof/urdf/gen3_macro.xacro:126,306 (39 / 9 Nm);
+% src/dual_arm_torso/urdf/dual_arm_torso.urdf.xacro:72 (1000 N);
+% notes/04_odluke/D-21_effort_pid_actuator_profile.md; notes/03_problemi/P-41 (#3, #4)
+\begin{table}[H]
+  \centering
+  \footnotesize
+  \setstretch{1.05}
+  \caption{Profili aktuatora ruku i vodilica torza}
+  \label{tab:profili-aktuatora}
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+    \toprule
+    & \textbf{Zadani profil} & \textbf{Profil \texttt{force\_grasp}} \\
+    \midrule
+    Pokretanje & \texttt{sim.launch.py}, \texttt{mission.launch.py} & \texttt{sim.launch.py force\_grasp:=true} \\
+    Konfiguracija & \texttt{controllers.yaml}, 100~Hz & \texttt{force\_controllers.yaml}, 1000~Hz \\
+    Naredbeno sučelje & \texttt{position} & \texttt{effort}, granice iz URDF-a: 39~N\,m (zglobovi 1--4), 9~N\,m (5--7), 1000~N (vodilice) \\
+    Regulacija & dodatak: brzina $= 0{,}1 \cdot$ greška položaja & PID u JTC-u; ruke $p = 34{,}9$ do $10\,181$, vodilice $p/i/d = 1500/500/100$ \\
+    \texttt{DetachableJoint} & aktivan & uklonjen iz opisa robota \\
+    Izmjereno & vodilice \SI{0.0000}{mm}; ruke ne drže pozu pod gravitacijom & pred-hvat \SI{7}{mm} i \SI{10}{mm}, bez titranja na 14 zglobova \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+% izvor: notes/04_odluke/D-21_effort_pid_actuator_profile.md (razlog: 39/9 Nm limits, position
+% has no torque limit); notes/03_problemi/P-41_effort_pid_arm_actuator_profile.md (KDL ~30x,
+% bang-bang at 1 ms on joints 1,3,5,7; omega 150 rad/s, zeta 1, i = p/2, i_clamp = torque limit);
+% launch/mission.launch.py:35-49 (no force_grasp argument)
+Drugi profil (tablica~\ref{tab:profili-aktuatora}) uveli smo za pokus hvata silom.
+\texttt{sim.launch.py force\_grasp:=true} prepisuje opis robota: zglobovima ruku i vodilicama
+mijenja naredbeno sučelje u \texttt{effort} s granicama iz URDF-a, dodaje stanje
+\texttt{effort} i učitava \texttt{force\_controllers.yaml}. Razlog je vjernost parametara:
+pozicijsko sučelje vodi zglob bez ograničenja momenta, pa bi stisak kutije mogao razviti moment
+koji stvarni Gen3 ne može ostvariti. Pojačanja PID-a računali smo iz izmjerene efektivne
+inercije zglobova. Dijagonala KDL matrice mase precjenjuje inerciju zakretnih zglobova i do
+30~puta, a pojačanja iz nje dovela su zglobove 1, 3, 5 i 7 do titranja na svakom koraku fizike
+od 1~ms. Konačna pojačanja daju kritično prigušen sustav s $\omega = 150$~rad/s,
+$i = p/2$ i \texttt{i\_clamp} jednakim granici momenta, jer je integrator jedina kompenzacija
+gravitacije u tom profilu. Misija (\texttt{mission.launch.py}) zastavicu \texttt{force\_grasp}
+ne postavlja i radi na zadanom pozicijskom profilu.

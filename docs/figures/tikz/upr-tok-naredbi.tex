@@ -1,0 +1,54 @@
+% G09: command flow for the base (left) and the arms (right).
+% Sources:
+%   base:  config/collision_monitor.yaml:9-10,59; cmd_vel_relay.py:1-16,36,52-67;
+%          base_drive.py:27; nav2_bringup navigation_launch.py:183,242 (cmd_vel -> cmd_vel_nav
+%          -> velocity_smoother -> cmd_vel); config/controllers.yaml:27-64;
+%          urdf/robot.urdf.xacro:381-405 (velocity command interfaces of the wheels)
+%   arms:  main_task.py:321-353 (MoveGroup, ExecuteTrajectory, FollowJointTrajectory,
+%          GripperCommand clients); config/controllers.yaml:9-25,66-128
+%   plugin: urdf/robot.urdf.xacro:479-481; config/controllers.yaml:3 (100 Hz)
+\begin{tikzpicture}[
+  font=\scriptsize,
+  blk/.style={draw, rounded corners=2pt, align=center, text width=30mm,
+              minimum height=7mm, inner sep=2pt},
+  src/.style={blk, fill=blue!7},
+  flt/.style={blk, fill=orange!12},
+  ctl/.style={blk, fill=green!10},
+  arr/.style={-{Stealth[length=1.5mm]}, semithick},
+  lbl/.style={font=\tiny\ttfamily, inner sep=1pt, align=left},
+]
+  % ---------------------------------------------------------------- base
+  \node[src] (nav) at (1.75, 0) {Nav2 (\texttt{velocity\_smoother})\\ili teleop};
+  \node[src] (bd)  at (5.95, 0) {\texttt{main\_task},\\\texttt{mapping\_tour}};
+  \node[flt] (cm)  at (2.05, -1.4) {\texttt{collision\_monitor}\\obris, \texttt{/scan\_filtered}};
+  \node[flt, text width=38mm] (rl) at (3.95, -2.75)
+       {\texttt{cmd\_vel\_relay}\\prednost: \texttt{/cmd\_vel\_safe}};
+  \node[ctl, text width=38mm] (bc) at (3.95, -4.1)
+       {\texttt{base\_controller}\\(\texttt{MecanumDriveController})};
+
+  \draw[arr] (nav.south -| cm.north) -- node[lbl, right] {/cmd\_vel} (cm.north);
+  \draw[arr] (cm.south) -- node[lbl, right] {/cmd\_vel\_safe} (cm.south |- rl.north);
+  \draw[arr, dashed] ([xshift=2.5mm]nav.south west) |- node[lbl, pos=0.25, left] {sirovi\\/cmd\_vel} (rl.west);
+  \draw[arr] (bd.south) |- node[lbl, pos=0.25, right] {/base\_controller/\\cmd\_vel\_unstamped} (rl.east);
+  \draw[arr] (rl.south) -- node[lbl, right] {/base\_controller/\\reference\_unstamped} (bc.north);
+
+  % ---------------------------------------------------------------- arms
+  \node[src] (mt)  at (10.15, 0) {\texttt{main\_task}};
+  \node[flt] (mg)  at (14.25, -1.4) {\texttt{move\_group}\\(MoveIt 2)};
+  \node[ctl] (oth) at (10.15, -4.1) {\texttt{torso\_controller},\\\texttt{pan\_tilt\_controller},\\hvataljke};
+  \node[ctl] (jtc) at (14.25, -4.1) {\texttt{left\_arm\_controller}\\\texttt{right\_arm\_controller}};
+
+  \draw[arr] (mt.east) -| node[lbl, pos=0.3, above] {/move\_action\\/execute\_trajectory} (mg.north);
+  \draw[arr] (mg.south) -- node[lbl, right] {FollowJoint-\\Trajectory} (jtc.north);
+  \draw[arr] (mt.south) -- node[lbl, right, pos=0.72] {FollowJoint-\\Trajectory,\\GripperCommand} (oth.north);
+  \draw[arr, dashed] (mt.south east) -- node[lbl, left, pos=0.3] {izravno,\\obje ruke} (jtc.north west);
+
+  % ---------------------------------------------------------------- plugin
+  \node[draw, rounded corners=2pt, fill=gray!12, align=center, minimum height=7mm,
+        minimum width=160mm, inner sep=2pt] (gz) at (8.0, -5.45)
+       {\texttt{ign\_ros2\_control}: \texttt{controller\_manager} (100~Hz) i \texttt{IgnitionSystem}
+        $\rightarrow$ zglobovi robota u Gazebu};
+  \draw[arr] (bc.south) -- node[lbl, right] {velocity, 4 kotača} (bc.south |- gz.north);
+  \draw[arr] (oth.south) -- node[lbl, right] {position} (oth.south |- gz.north);
+  \draw[arr] (jtc.south) -- node[lbl, right] {position} (jtc.south |- gz.north);
+\end{tikzpicture}
