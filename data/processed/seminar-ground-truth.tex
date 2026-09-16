@@ -1,0 +1,1125 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[croatian]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+% Times New Roman. NAPOMENA: izvorni predlozak koristi mathptmx, cije T1 varijante
+% nemaju hrvatske dijakritike (c, c, s, z ispadnu iz PDF-a). newtx je Times klon s
+% punim T1 pokrivanjem i vizualno je istovjetan.
+\usepackage{newtxtext,newtxmath}
+\usepackage{chngcntr}       % Za numeriranje po poglavljima
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{url}
+\urlstyle{tt}
+\usetikzlibrary{positioning,arrows.meta,fit,calc,shapes.geometric}
+
+% Postavke margina
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+% Prored 1.5
+\onehalfspacing
+
+% Bez rastavljanja rijeci na kraju retka
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\tolerance=9999
+\emergencystretch=3em
+
+% ---- STILOVI NASLOVA ----
+\titleformat{\section}
+  {\normalfont\large\bfseries\uppercase}{\thesection.}{0.5em}{}
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\itshape}{\thesubsubsection.}{0.5em}{}
+\titleformat{\paragraph}[hang]
+  {\normalfont\normalsize\itshape}{\theparagraph.}{0.5em}{}
+\titlespacing*{\paragraph}{0pt}{3.25ex plus 1ex minus .2ex}{0.5em}
+
+% Svaki \section počinje na novoj stranici
+\newcommand{\sectionbreak}{\clearpage}
+
+% ---- NUMERIRANJE SLIKA, TABLICA I JEDNADŽBI PO POGLAVLJIMA ----
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\counterwithin{equation}{section}
+
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+
+% ---- NAZIVI AUTOMATSKIH POPISA ----
+\addto\captionscroatian{%
+  \renewcommand{\contentsname}{SADRŽAJ}%
+  \renewcommand{\listfigurename}{POPIS SLIKA}%
+  \renewcommand{\listtablename}{POPIS TABLICA}%
+  \renewcommand{\refname}{LITERATURA}%
+}
+
+% ---- POTPISI SLIKA I TABLICA ----
+\captionsetup[figure]{font={small,bf},labelsep=period}
+\captionsetup[table]{font={small,bf},labelsep=period,position=above}
+
+% ---- ISPISI IZ LOGA ----
+\lstdefinestyle{log}{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray!50},
+  backgroundcolor=\color{gray!5},
+  columns=fullflexible,
+  keepspaces=true
+}
+
+% ---- ZAGLAVLJE I PODNOŽJE ----
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{Krešimir Hartl}}
+\fancyhead[R]{\small\textit{Seminar}}
+\fancyfoot[L]{\small\textit{Fakultet strojarstva i brodogradnje}}
+\fancyfoot[R]{\small\textit{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\graphicspath{{slike/}}
+
+% Plutajuci objekti smiju zauzeti vise stranice prije nego odu na svoju
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+
+\begin{document}
+
+% =====================================================================
+% NASLOVNICA
+% =====================================================================
+\begin{titlepage}
+    \thispagestyle{empty}
+    \centering
+    {\fontsize{16pt}{19pt}\selectfont SVEUČILIŠTE U ZAGREBU\\}
+    {\fontsize{16pt}{19pt}\selectfont FAKULTET STROJARSTVA I BRODOGRADNJE\\}
+    \vfill
+    {\fontsize{28pt}{34pt}\selectfont\bfseries PROJEKTIRANJE AUTONOMNIH SUSTAVA\\}
+    \vspace{0.5cm}
+    {\fontsize{28pt}{34pt}\selectfont\bfseries SEMINAR\\}
+    \vfill
+    \noindent
+    \begin{flushright}
+        {\fontsize{14pt}{17pt}\selectfont\bfseries Krešimir Hartl\\}
+    \end{flushright}
+    \vspace{1cm}
+    \begin{center}
+        {\fontsize{14pt}{17pt}\selectfont Zagreb, 2026.}
+    \end{center}
+\end{titlepage}
+
+% =====================================================================
+% SADRŽAJ I POPISI (rimske stranice)
+% =====================================================================
+\pagenumbering{Roman}
+
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\listoftables
+\newpage
+
+% =====================================================================
+% SADRŽAJ RADA (arapske stranice)
+% =====================================================================
+\pagenumbering{arabic}
+
+% =====================================================================
+\section{UVOD}
+% =====================================================================
+
+Cilj rada je izraditi simulacijski model dvorukog mobilnog robota i na njemu izvesti
+autonomnu misiju. Model obuhvaća mobilnu bazu s dvjema robotskim rukama na vertikalnim
+linearnim vodilicama i pan-tilt kamerom na vrhu, prikazan na slici~\ref{fig:sustav}, sa
+senzorima, aktuatorskim mehanizmima i upravljačkim sustavima, uz parametre usklađene sa
+specifikacijama stvarnog robota.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.44\textwidth]{s11_sustav_cad.png}
+    \caption{Sustav koji je modeliran: omnidirekcijska baza, dvije vertikalne linearne vodilice s klizačima, dvije ruke sa sedam osi i pan-tilt kamera na vrhu torza}
+    \label{fig:sustav}
+\end{figure}
+
+Rad je izveden u programskom okviru \textbf{ROS 2 Humble}~\cite{ros2}, u simulatoru
+\textbf{Gazebo Fortress} (LTS)~\cite{gazebo}, uz \textbf{ros2\_control}~\cite{ros2control} kao
+sučelje prema aktuatorima. Za planiranje gibanja ruku korišten je \textbf{MoveIt 2}~\cite{moveit},
+za izgradnju karte \textbf{slam\_toolbox}~\cite{slam}, a za lokalizaciju i navigaciju
+\textbf{Nav2}~\cite{nav2}.
+
+Konačni rezultat je misija koja se pokreće \textbf{jednom naredbom}: robot se stvara u srednjoj
+sobi s raširenim rukama, sam ih slaže u pozu vožnje i čeka naredbu korisnika. Nakon naredbe
+odvozi se u susjednu sobu, pronalazi kutiju pomoću ArUco markera, podiže je objema rukama,
+prenosi kroz vrata u treću sobu i odlaže na označeno mjesto. U posljednjem potvrđenom izvođenju
+središte kutije sjelo je \textbf{5 mm} od središta odredišnog markera, uz donju plohu kutije
+\textbf{4 mm} iznad ploče stola.
+
+% =====================================================================
+\section{ZADATAK I ZAHTJEVI}
+\label{sec:zahtjevi}
+% =====================================================================
+
+Zadatak je razložen na \textbf{20 zahtjeva} (oznake R-01 do R-20), pri čemu svaki zahtjev ima
+navedeni izvor, tehničko značenje i \textbf{mjerljiv kriterij prihvaćanja}. Zahtjevi su
+grupirani u četiri skupine prikazane na slici~\ref{fig:stablo}.
+
+\begin{figure}[!htbp]
+    \centering
+    \resizebox{0.88\textwidth}{!}{\input{slike/tikz/stablo_zahtjeva.tex}}
+    \caption{Stablo zahtjeva: iz cilja R0 izvedene su četiri skupine i 20 pojedinačnih zahtjeva}
+    \label{fig:stablo}
+\end{figure}
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Popis zahtjeva i njihovo konačno stanje}
+    \label{tab:zahtjevi}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l X l@{}}
+        \toprule
+        \textbf{Oznaka} & \textbf{Zahtjev} & \textbf{Stanje} \\
+        \midrule
+        R-01 & Mobilna baza iz zadanog izvora                        & ispunjeno \\
+        R-02 & Dvije ruke sa sedam osi i hvataljkama                 & ispunjeno \\
+        R-03 & Vertikalne linearne vodilice kao aktuator             & ispunjeno \\
+        R-04 & Pan-tilt mehanizam i kamera na vrhu                   & ispunjeno \\
+        R-05 & Izgled robota prema priloženoj slici                  & ispunjeno \\
+        R-06 & Realni parametri i realistična interakcija            & uz odstupanje \\
+        R-07 & ROS 2 Humble, Gazebo Fortress, \texttt{ros2\_control} & ispunjeno \\
+        R-08 & Omnidirekcijski pogon baze                            & uz odstupanje \\
+        R-09 & Ruke na \texttt{ros2\_control}, upravljanje MoveIt-om & ispunjeno \\
+        R-10 & Okruženje koje robot može mapirati                    & ispunjeno \\
+        R-11 & Prolaz standardne širine                              & uz odstupanje \\
+        R-12 & Kutija s ArUco markerom                               & ispunjeno \\
+        R-13 & Zadano odredišno mjesto                               & ispunjeno \\
+        R-14 & Mapiranje uz \texttt{slam\_toolbox}                   & ispunjeno \\
+        R-15 & Vožnja u regiju koju zada korisnik                    & ispunjeno \\
+        R-16 & Samostalan pronalazak kutije                          & ispunjeno \\
+        R-17 & Podizanje kutije objema rukama                        & ispunjeno \\
+        R-18 & Prolazak kroz vrata bez kutije                        & ispunjeno \\
+        R-19 & Prolazak kroz vrata s kutijom                         & ispunjeno \\
+        R-20 & Odlaganje kutije na zadano mjesto                     & ispunjeno \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Od 20 zahtjeva njih 17 je ispunjeno u cijelosti, a tri uz odstupanje opisano u
+poglavlju~\ref{sec:ogranicenja}.
+
+% =====================================================================
+\section{ARHITEKTURA SUSTAVA}
+\label{sec:arhitektura}
+% =====================================================================
+
+\subsection{Slojevi sustava}
+
+Sustav je izveden u šest slojeva, prikazanih na slici~\ref{fig:slojevi}. Svaki sloj prema gore
+prosljeđuje \textbf{mjerenja}, a prema dolje \textbf{naredbe}, i nijedan sloj ne preskače onaj
+ispod sebe. Primjer je navigacija --- misija ne šalje cilj izravno Nav2-u, nego uvijek preko
+vlastitog čvora \texttt{room\_navigator}, jer samo on poznaje geometriju prolaza i zna da se u
+vrata mora ući okomito.
+
+\begin{figure}[!htbp]
+    \centering
+    \resizebox{0.86\textwidth}{!}{\input{slike/tikz/slojevi.tex}}
+    \caption{Šest slojeva sustava; desno su komponente koje svaki sloj čine}
+    \label{fig:slojevi}
+\end{figure}
+
+\subsection{Vlastiti i preuzeti paketi}
+
+Zadatak je propisao izvore modela pojedinih komponenata, pa je dio sustava preuzet, a dio
+napisan. Ta je granica u tablici~\ref{tab:paketi} povučena eksplicitno. Preuzeti paketi
+\textbf{nisu} dio repozitorija --- repozitorij nosi samo manifest s točno određenim (engl.
+\textit{pinned}) verzijama, a paketi se dohvaćaju izravno od autora naredbom \texttt{vcs import}.
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Vlastiti i preuzeti programski paketi}
+    \label{tab:paketi}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l l X@{}}
+        \toprule
+        \textbf{Paket} & \textbf{Podrijetlo} & \textbf{Uloga} \\
+        \midrule
+        \multicolumn{3}{@{}l}{\textit{Napisano za ovaj rad}} \\
+        \midrule
+        \texttt{pas\_dual\_arm\_bringup}        & vlastito & URDF model, svijet, sve \texttt{launch} datoteke, konfiguracije Nav2/SLAM/kontrolera, karte \\
+        \texttt{pas\_dual\_arm\_scripts}        & vlastito & svi čvorovi misije, navigacije i percepcije \\
+        \texttt{pas\_dual\_arm\_moveit\_config} & vlastito & MoveIt 2: SRDF, kinematika, planeri, preslikavanje kontrolera \\
+        \texttt{dual\_arm\_torso}               & vlastito & opis torza i vodilica (STL model: B.~Ćaran, uz dopuštenje) \\
+        \midrule
+        \multicolumn{3}{@{}l}{\textit{Preuzeto, na određenim verzijama}} \\
+        \midrule
+        \texttt{omni\_base\_simulation} & PAL Robotics & geometrija mobilne baze, kotači, lidar \\
+        \texttt{ros2\_kortex}           & Kinova       & ruke Gen3 (7 osi) i hvataljke Robotiq 2F-85 \\
+        \texttt{pan\_tilt\_ros}         & I-Quotient   & pan-tilt mehanizam na vrhu torza \\
+        \texttt{realsense-ros}          & Intel        & opis kamere RealSense D435 \\
+        \texttt{aruco\_ros}             & PAL Robotics & preuzet, ali neiskorišten \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Na preuzetom kodu napravljene su točno \textbf{dvije} izmjene, obje vođene kao zakrpe koje se
+primjenjuju skriptom: uklanjanje triju argumenata iz opisa hvataljke kojih na korištenoj grani
+nema, i dodavanje inercija te podizanje granica momenta pan-tilt zglobovima.
+
+Paket \texttt{aruco\_ros} naveden je u zadatku kao prijedlog, ali je napisan vlastiti detektor.
+Razlog je tehnički: knjižnica tog paketa ne poznaje rječnik \texttt{DICT\_4X4\_50}, koji je
+odabran jer mali rječnik smanjuje vjerojatnost lažne detekcije. Vlastiti detektor koristi
+\texttt{cv2.aruco} i zadržava isto sučelje prema ostatku sustava.
+
+\subsection{Čvorovi napisani za ovaj rad}
+
+Za ovaj je rad napisano \textbf{14 izvršnih čvorova} i sedam bibliotečnih modula, svi u jeziku
+Python. Čvorovi i njihove veze prikazani su na slici~\ref{fig:graf}, a uloge su sažete u
+tablici~\ref{tab:cvorovi}.
+
+\begin{figure}[!htbp]
+    \centering
+    \resizebox{0.92\textwidth}{!}{\input{slike/tikz/graf_cvorova.tex}}
+    \caption{Vlastiti čvorovi (bijelo) i preuzete komponente (sivo) s glavnim temama među njima}
+    \label{fig:graf}
+\end{figure}
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Čvorovi napisani za ovaj rad}
+    \label{tab:cvorovi}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l l X@{}}
+        \toprule
+        \textbf{Sloj} & \textbf{Čvor} & \textbf{Uloga} \\
+        \midrule
+        Orkestracija & \texttt{main\_task}           & stroj stanja cijele misije u osam koraka \\
+        \midrule
+        Navigacija   & \texttt{room\_navigator}      & vožnja soba po soba, okomit ulazak u prolaz, prekid po bočnom razmaku \\
+                     & \texttt{nav\_zones}           & iz karte izvodi vrata, stolove i graf soba te gradi polje cijene \\
+                     & \texttt{nav\_gui}             & upravljački panel i prikaz koraka misije \\
+                     & \texttt{feature\_registry}    & prepoznavanje vrata u karti i ploča stolova u oblaku točaka \\
+                     & \texttt{mapping\_tour}        & skriptirana tura kroz tri sobe pri mapiranju \\
+                     & \texttt{cmd\_vel\_relay}      & jedini put naredbi brzine prema bazi i točka provedbe zaštite \\
+                     & \texttt{scan\_filter}         & uklanjanje odbljesaka s vlastitog tijela iz očitanja lidara \\
+                     & \texttt{footprint\_publisher} & objava stvarnog obrisa robota, uključujući nošenu kutiju \\
+                     & \texttt{loc\_error}           & dijagnostika točnosti lokalizacije (bez ovlasti nad gibanjem) \\
+        \midrule
+        Percepcija   & \texttt{aruco\_detector}      & detekcija markera; četiri instance (glava, dva zapešća, odlaganje) \\
+                     & \texttt{cloud\_restamp}       & usklađivanje koordinatnih sustava oblaka točaka za prikaz \\
+        \midrule
+        Poze         & \texttt{set\_posture}         & postavljanje imenovane poze uz provjeru razmaka od tla \\
+                     & \texttt{table\_ready}         & priprema vodilica i ruku uz \textit{izmjerenu} potvrdu \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Dvije invarijante arhitekture}
+
+\textbf{Jedan izvor očitanja okoline.} Sirovo očitanje lidara koristi se isključivo za dijagnozu.
+Sve što donosi odluke --- izgradnja karte, lokalizacija, obje karte cijene, nadzor sudara i
+navigacijski čvor --- čita \textbf{isti} filtrirani signal.
+
+\textbf{Tri usklađena odgovora na pitanje širine robota.} Robot je s rukama u pozi vožnje
+0,821 m širok, a prolaz je 0,980 m --- ostaje oko 8 cm po strani. Zato širina nije zapisana na
+jednom mjestu, nego je izvedena na tri, koja se moraju slagati: iz geometrije modela, kao obris
+koji se objavljuje kartama cijene, te kao područje koje nadzire zaštitni sloj.
+
+% =====================================================================
+\section{MODEL ROBOTA I SIMULACIJSKO OKRUŽENJE}
+\label{sec:model}
+% =====================================================================
+
+\subsection{Sastavljanje modela robota}
+
+Robot ne postoji kao gotov model --- sastavljen je iz \textbf{pet izvora} u jedan opis. Mobilna
+baza, torzo s vodilicama, dvije ruke, pan-tilt mehanizam i kamera dolaze iz zasebnih paketa,
+svaki sa svojim pretpostavkama o koordinatnim sustavima i mjernim jedinicama. Središnja datoteka
+opisa poziva ih redom i povezuje u jedno kinematičko stablo. Isti opis robota koriste i simulator
+i planer gibanja, pa oba rade nad istim modelom.
+
+Ruke su na klizače montirane pod kutom, preko klinastih nosača, a desna je dodatno zakrenuta za
+180$^\circ$ oko okomite osi. Svakoj je hvataljci dodan koordinatni sustav \texttt{tool\_tip},
+pomaknut \textbf{0,127 m} od prirubnice, koji odgovara \textbf{središtu zatvorenih jastučića}.
+To je važno za hvat: sve se ciljne točke zadaju upravo tom točkom, a ne prirubnicom, pa je
+odstupanje koje se poslije mjeri stvarno odstupanje mjesta dodira.
+
+\begin{figure}[!htbp]
+    \centering
+    \begin{minipage}{0.475\textwidth}\centering
+        \includegraphics[width=\linewidth]{basic_pose.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.475\textwidth}\centering
+        \includegraphics[width=\linewidth]{drive_pose.png}
+    \end{minipage}
+    \caption{Robot u simulatoru: poza pri stvaranju s raširenim rukama (lijevo) i poza vožnje \texttt{DRIVE\_V4} širine 0,821 m (desno)}
+    \label{fig:poze}
+\end{figure}
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Izmjerene dimenzije robota i mase sastavnih dijelova}
+    \label{tab:mjere}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l l X@{}}
+        \toprule
+        \textbf{Veličina} & \textbf{Vrijednost} & \textbf{Napomena} \\
+        \midrule
+        Duljina $\times$ širina $\times$ visina & 1,04 $\times$ 0,854 $\times$ 1,45 m & izmjereno nad modelom, u pozi nošenja \\
+        Širina u pozi vožnje                    & 0,821 m                             & najuža provjerena poza ruku \\
+        Hod vertikalnih vodilica                & 0,05 -- 0,65 m                      & prizmatični zglob, sila 1000 N \\
+        Visina kamere na glavi                  & 1,39 m                              & odredila je potrebnu visinu zidova \\
+        Polumjer kotača                         & 0,0762 m                            & mecanum kotači, četiri komada \\
+        Masa baze                               & 34,05 kg                            & iz preuzetog modela \\
+        Masa vodilice / klizača                 & 12 kg / 2 kg                        & \textbf{procjena} (v.~pogl.~\ref{sec:ogranicenja}) \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Senzori}
+
+Model nosi senzore navedene u tablici~\ref{tab:senzori}. Vrijedi istaknuti dvije odluke. Prvo,
+originalni laserski senzori preuzete baze su \textbf{isključeni} jer su namijenjeni starijem
+simulatoru i nisu objavljivali ništa, dok su im modeli stajali u ravnini mjerenja novog senzora.
+Umjesto njih ugrađen je lidar prema specifikaciji stvarnog uređaja. Drugo, kontaktni senzori na
+jastučićima i senzori sile na zapešćima postoje isključivo kao \textbf{dokaz} pri ocjeni;
+nijedan upravljački čvor ih ne čita, jer bi to bila privilegija koju stvarni robot nema.
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Senzori simulacijskog modela}
+    \label{tab:senzori}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l l X@{}}
+        \toprule
+        \textbf{Senzor} & \textbf{Mjesto} & \textbf{Značajke} \\
+        \midrule
+        Lidar                & baza      & 1080 zraka po punom krugu, doseg 0,05--25 m, razlučivost 1 mm, 25 Hz \\
+        RGB-D kamera         & pan-tilt glava & 640 $\times$ 480, 15 Hz, vidno polje 1,211 rad \\
+        RGB-D kamere (2)     & zapešća   & vidno polje 1,047 rad, bliska granica 0,02 m \\
+        Kontaktni senzori (4)& jastučići hvataljki & 50 Hz, javljaju imena tijela u dodiru \\
+        Senzori sile (2)     & zapešća   & 200 Hz, samo za vrednovanje \\
+        Inercijski senzor    & baza      & 100 Hz \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Simulacijsko okruženje}
+
+Svijet se sastoji od tri sobe dimenzija 6 $\times$ 6 m složene u obliku slova L, prikazane na
+slici~\ref{fig:tlocrt}. Robot počinje u srednjoj (\textsc{home}) sobi, kutija se nalazi u plavoj,
+a odredište u crvenoj. Takav raspored namjerno je stroži od zadatka: umjesto jednog prolaza robot
+mora proći kroz \textbf{dva}, i to u oba smjera, pri čemu drugi prolaz prelazi noseći kutiju.
+
+\begin{figure}[!htbp]
+    \centering
+    \resizebox{0.72\textwidth}{!}{\input{slike/tikz/tlocrt.tex}}
+    \caption{Tlocrt simulacijskog svijeta s položajima stolova, kutije, markera odlaganja i
+             polazišta robota}
+    \label{fig:tlocrt}
+\end{figure}
+
+Zidovi su debeli 0,10 m i visoki 3,0 m --- dovoljno da kamera na visini 1,39 m ne gleda preko njih.
+
+Prolazi su nazivne širine 1,0 m, a na izgrađenoj karti mjere \textbf{0,980 m}. Uz širinu robota od
+0,821 m ostaje oko 8 cm po strani --- upravo toliko da prolaz bude stvaran test, a ne formalnost.
+
+Kutija je kocka brida \textbf{0,30 m} i mase \textbf{0,3 kg}. Dimenzije i masa nisu bile zadane,
+pa su odabrane tako da kutija bude prevelika za obuhvat jednom hvataljkom, čime se dvoručno
+podizanje iz zahtjeva R-17 nameće kao jedini put. Nosi tri markera: veliki na prednjoj plohi, za
+pronalaženje s udaljenosti, i dva manja na bočnim plohama, koje čitaju kamere na zapešćima
+neposredno prije hvata. Bočni su markeri podignuti 0,056 m iznad središta plohe, točno u optičku
+os tih kamera.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.44\textwidth]{box_on_desk.png}
+    \caption{Kutija brida 0,30 m na stolu, s markerom za pronalaženje na prednjoj i manjim markerom za kamere zapešća na bočnoj plohi}
+    \label{fig:kutija}
+\end{figure}
+
+Odredište je ploča s markerom brida 0,36 m, položena na stol u crvenoj sobi. Namjerno je šira od
+kutije: kad kutija sjedne na sredinu, oko nje ostaje jednak rub sa sve četiri strane, pa se
+uspješnost odlaganja vidi \textbf{golim okom}, neovisno o brojkama u zapisu.
+
+% =====================================================================
+\section{UPRAVLJANJE I PERCEPCIJA}
+\label{sec:upravljanje}
+% =====================================================================
+
+\subsection{Sučelje prema aktuatorima}
+
+Zadatak je propisao \texttt{ros2\_control} kao okvir upravljanja, što znači da se svi aktuatori
+robota vode preko istog sučelja, neovisno o tome radi li se o simulaciji ili o stvarnom robotu.
+Sučelje prema simulatoru izvedeno je dodatkom \texttt{ign\_ros2\_control}, a upravljačka petlja
+radi na \textbf{100 Hz}.
+
+Robotom upravlja \textbf{osam} kontrolera navedenih u tablici~\ref{tab:kontroleri}. Svi rade na
+\textbf{pozicijskom} sučelju --- nigdje se ne koristi regulator sile ni momenta. To je svjesna
+odluka: bez mjerenja koja bi opravdala pojačanja, uveden regulator samo bi sakrio pogreške u
+geometriji iza naizgled glatkog odziva.
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Kontroleri i skupine zglobova kojima upravljaju}
+    \label{tab:kontroleri}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l l X@{}}
+        \toprule
+        \textbf{Kontroler} & \textbf{Vrsta} & \textbf{Zglobovi i napomena} \\
+        \midrule
+        \texttt{joint\_state\_broadcaster} & objavljivač & stanja svih zglobova \\
+        \texttt{base\_controller}          & mecanum     & četiri kotača; daje odometriju i transformaciju \\
+        \texttt{left\_arm\_controller}     & trajektorijski & sedam zglobova lijeve ruke \\
+        \texttt{right\_arm\_controller}    & trajektorijski & sedam zglobova desne ruke \\
+        \texttt{torso\_controller}         & trajektorijski & dva prizmatična klizača vodilica \\
+        \texttt{pan\_tilt\_controller}     & trajektorijski & zakret i nagib glave \\
+        \texttt{left\_gripper\_controller} & hvataljka   & lijeva hvataljka Robotiq 2F-85 \\
+        \texttt{right\_gripper\_controller}& hvataljka   & desna hvataljka \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Omnidirekcijski pogon baze}
+
+Pogon baze bio je izričit zahtjev (R-08) i ujedno prvi ozbiljan tehnički problem. Pogonski
+kontroler koji koristi proizvođač baze \textbf{nije dostupan} za korištenu inačicu ROS-a 2, pa je
+umjesto njega upotrijebljen \texttt{mecanum\_drive\_controller}, koji ostvaruje istu funkciju ---
+neovisno gibanje po osima $x$ i $y$ te zakret --- nad istim mecanum kotačima.
+
+Sama zamjena kontrolera nije bila dovoljna. Mecanum kotač gibanje ustranu ostvaruje \textbf{kosim
+valjcima}, koji klize uzduž osi valjka, a prianjaju okomito na nju. Uz izotropno trenje kotač
+takvo gibanje ne može proizvesti: baza se ili ne miče ili nekontrolirano zanosi. Rješenje je
+\textbf{anizotropno trenje} --- uzdužno 0,80, poprečno 0,20, uz smjer prianjanja zadan u
+koordinatnom sustavu baze. Tek je tada izmjereno čisto bočno gibanje bez zakreta, kao i vožnja
+unatrag bez zanošenja.
+
+\subsection{Prepoznavanje kutije}
+
+Kutija se pronalazi ArUco markerima, rječnikom \texttt{DICT\_4X4\_50}. Mali rječnik odabran je
+namjerno: što je manje kodova, to je veća međusobna udaljenost kodova i manja vjerojatnost lažne
+detekcije pri lošem kutu ili osvjetljenju.
+
+Detekcija je izvedena vlastitim čvorom, u \textbf{četiri instance} --- jedna na kameri glave
+(marker na prednjoj plohi kutije, za pronalaženje izdaleka), po jedna na kamerama zapešća
+(markeri na bočnim plohama, za posljednji korak prilaza) i jedna za marker odlaganja.
+
+Položaj kutije ne dolazi iz jednog izvora. Uz marker, kutija se mjeri i \textbf{dubinskom
+kamerom}, a dva se rezultata uspoređuju; ako se razlikuju više od 0,15 m, misija se prekida
+umjesto da nastavi s nepouzdanim podatkom. Razlog za dvostruko mjerenje je praktičan: marker daje
+točan položaj, ali ne i dimenzije, dok dubinsko mjerenje daje dimenzije potrebne za izračun
+širine hvata.
+
+Zanimljivo ograničenje pokazalo se pri samom prilazu. Marker se \textbf{ne} može čitati izbliza
+pod velikim nagibom --- kvadrat se perspektivno sažima i detekcija otkazuje. Zato se prilaz vodi
+markerom samo do približno 0,90 m, a posljednji dio puta prelazi se uz mjerenje dubinom, koje na
+kut nije osjetljivo. Iz istog razloga kamere na zapešćima ne vide svoje markere u trenutku kad
+jastučići već drže kutiju (na 2 cm od plohe), pa se položaj držane kutije vodi iz transformacije
+zapamćene u trenutku hvatanja.
+
+% =====================================================================
+\section{MAPIRANJE I NAVIGACIJA}
+\label{sec:navigacija}
+% =====================================================================
+
+\subsection{Izgradnja karte}
+
+Karta se gradi paketom \texttt{slam\_toolbox}, uz razlučivost \textbf{0,02 m} i gušći graf poza
+nego što je uobičajeno (nova poza svakih 0,1 m ili 0,1 rad). Razlog za oboje je isti: prolazi su
+široki 0,98 m, a robot 0,821 m, pa pogreška karte od nekoliko centimetara nije kozmetička --- ona
+odlučuje hoće li prolaz na karti uopće biti prohodan.
+
+Mapiranje se vodi \textbf{ručno}, upravljanjem s tipkovnice, i to po pravilima koja slijede iz
+trenja mecanum kotača: robot se zaustavi prije skretanja, zakrene u mjestu, pa vozi ravno ---
+nikad u luku. Ruta je \textsc{home} $\rightarrow$ plava soba $\rightarrow$ \textsc{home}
+$\rightarrow$ crvena soba $\rightarrow$ \textsc{home}, jer dva zatvaranja petlje drže kartu
+ravnom.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{mapping.png}
+    \caption{Izgradnja karte: laserska očitanja i zauzeće prostora tijekom ručne vožnje kroz sobe}
+    \label{fig:mapiranje}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.55\textwidth]{s61_karta.png}
+    \caption{Izgrađena karta razlučivosti 0,02 m: 103,9 m$^2$ slobodne površine na rasponu
+             11,9 $\times$ 11,9 m}
+    \label{fig:karta}
+\end{figure}
+
+\subsection{Kada se karta smije prihvatiti}
+
+Uobičajena mjera kvalitete karte je \textbf{pokrivenost} --- jesu li sve prostorije snimljene.
+Ta mjera ovdje nije dovoljna, jer ne kaže ništa o tome jesu li prolazi na karti ostali prohodni.
+Karta može pokriti sve tri sobe, a da se vrata na njoj suze za 5 cm i time potroše cijelu rezervu.
+
+Zato je uveden \textbf{geometrijski uvjet prihvaćanja} iz tablice~\ref{tab:gate}, koji se
+provjerava bez pokretanja simulacije. Ako karta padne na bilo kojem retku, ne prihvaća se nego se
+tura ponavlja.
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Uvjet prihvaćanja karte i izmjerene vrijednosti prihvaćene karte}
+    \label{tab:gate}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}X l l@{}}
+        \toprule
+        \textbf{Mjera} & \textbf{Prolazi ako} & \textbf{Izmjereno} \\
+        \midrule
+        Širina oboja vrata                    & $\ge$ 0,97 m  & \textbf{0,980 m} \\
+        Odstupanje osi prolaza                & $\le$ 1 cm    & \textbf{0,0 cm} \\
+        Debljina zida                         & $\le$ 0,14 m  & 0,120 m \\
+        Nagib lica zida                       & $\le$ 1,0$^\circ$ & $\le$ 0,02$^\circ$ \\
+        Stepenica između lica s obje strane   & $\le$ 20 mm   & $\le$ 0,9 mm \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Lokalizacija}
+
+Lokalizacija je izvedena algoritmom AMCL, uz model gibanja za omnidirekcijsku bazu i od 1000 do
+3000 čestica. Očekivano odstupanje mjerenja postavljeno je na \textbf{0,05 m}, u skladu sa
+stvarnom točnošću ugrađenog lidara od 1 mm. Vršna pogreška lokalizacije, izmjerena usporedbom sa stvarnim položajem iz
+simulatora, iznosi \textbf{3,0 cm} po osi $x$, \textbf{2,9 cm} po osi $y$ i \textbf{0,3}$^\circ$.
+
+\subsection{Planiranje puta jedinstvenim poljem cijene}
+
+Standardni pristup u Nav2 je \textit{sloj napuhavanja}, koji oko svake prepreke stvara područje
+povećane cijene. U ovom se svijetu pokazao neupotrebljivim iz dva razloga. Prvo, upisani polumjer
+robota iznosi 0,427 m, pa je u prolazu širine 0,98 m napuhavanje prekrilo \textbf{cijeli otvor}
+zabranjujućom cijenom --- planer je zaključio da prolaza nema. Drugo, noge stolova lidar vidi kao
+četiri odvojene prepreke, pa je oko stola nastajao uzorak nalik djetelini, a cijena se dvostruko
+zbrajala.
+
+Umjesto toga, iz karte se izravno gradi \textbf{jedinstvena ploha cijene}: zabranjujuća jezgra do
+upisanog polumjera, a zatim glatka rampa širine 0,40 m s vrhom znatno ispod zabranjujuće razine.
+Udaljenost se pritom mjeri od \textbf{ruba ploče stola}, a ne od nogu koje senzor vidi, pa robot
+obilazi stvarnu prepreku umjesto njezine sjene. Rezultat je putanja koja se drži \textbf{0,835 m}
+od stvarnih prepreka, bez ijednog umjetno zatvorenog prolaza.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.52\textwidth]{map.png}
+    \caption{Ploha cijene izvedena iz karte: zabranjujuća jezgra oko stolova i zidova, trake nulte cijene kroz prolaze i prilazne poze (plave strelice)}
+    \label{fig:polje}
+\end{figure}
+
+Dodatno su kroz prolaze i uz prilaz stolu izrezane \textbf{trake nulte cijene}. Bez njih se
+potencijal globalnog planera u uskom grlu zasićuje, pa gradijentni spust gubi smjer.
+
+\subsection{Prolazak kroz vrata}
+
+Lokalni planer podešen je za omnidirekcijsku bazu: dopušteno je gibanje ustranu do 0,15 m/s, a
+uzorkovanje brzina povećano je na 15 $\times$ 25 $\times$ 25 uzoraka po ciklusu, uz razlučivost
+0,01 m/s. Uklonjena su dva dodatka koja pretpostavljaju diferencijalni pogon; jedan od njih
+okretao je robota bočno za 132$^\circ$ neposredno pred vratima.
+
+Sam prolaz, međutim, nije prepušten lokalnom planeru. Njime upravlja vlastiti čvor, koji dionicu
+kroz vrata vodi kao zaseban, \textbf{okomit} ulazak: robot se prvo poravna s osi prolaza (dopušteno
+odstupanje 0,08 m i 5$^\circ$), pa prolazi ravno i sporije nego po otvorenom prostoru. Tijekom
+prolaza čvor neprekidno mjeri bočni razmak iz očitanja lidara i \textbf{prekida vožnju} ako
+razmak padne ispod granice --- radije stane nego da okrzne dovratnik.
+
+Prilaz stolu riješen je istom logikom. Uvedena je posebna poza ispred stola, udaljena 1,021 m od
+njegova središta, odnosno 10 cm od prednjeg ruba ploče. Na toj je pozi \textbf{zabranjen zakret u
+mjestu}, jer bi robot polumjera 0,673 m njime zahvatio stol; odlazak od stola uvijek počinje
+vožnjom unatrag.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.44\textwidth]{robot_door.png}
+    \caption{Robot u prolazu: objavljeni obris i laserska očitanja uz oba dovratka, pri rezervi od oko 8 cm po strani}
+    \label{fig:vrata}
+\end{figure}
+
+Izmjereni rezultati: \textbf{5 od 5} pokušaja prolaska kroz vrata uspješno, uz najmanji zabilježen
+bočni razmak od 3,0 do 6,1 cm pri raspoloživoj rezervi od 7,3 cm. Vožnja iz polazišta do plave
+sobe traje 33,1 s, a do stola u crvenoj sobi 60,6 s.
+
+% =====================================================================
+\section{DVORUČNI HVAT I MANIPULACIJA}
+\label{sec:hvat}
+% =====================================================================
+
+\subsection{Zašto hvat mora biti dvoručan}
+
+Hvataljke Robotiq 2F-85 imaju hod prstiju \textbf{85 mm}, a brid kutije iznosi \textbf{300 mm}.
+Nijedna hvataljka kutiju ne može obuhvatiti --- ni djelomično, ni za jedan brid. To nije
+nedostatak izvedbe nego posljedica same postave zadatka, koji traži podizanje objema rukama.
+
+Izabrano je rješenje u kojem obje ruke \textbf{zatvorenim} hvataljkama pritisnu suprotne bočne
+plohe kutije. Jastučići zatvorenih prstiju tada služe kao dodirne plohe, a kutija se drži
+pritiskom dviju ruku, ne stiskom prstiju. Takav zahvat zahtijeva da se obje ruke vode
+\textbf{istovremeno}: jednostrani pritisak gura kutiju po stolu umjesto da je pridrži.
+
+\subsection{Poze ruku}
+
+Umjesto računanja poza iz inverzne kinematike, ključne su poze \textbf{snimljene ručno} nad
+modelom, u za to napravljenom postavu, i pohranjene u registar poza. Razlog je praktičan: pozu
+koja istovremeno zadovoljava doseg, izbjegavanje sudara sa stolom i prolaznost kroz vrata teže je
+izračunati nego namjestiti i izmjeriti.
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Imenovane poze i pripadne visine klizača}
+    \label{tab:poze}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l l l X@{}}
+        \toprule
+        \textbf{Poza} & \textbf{Širina} & \textbf{Klizači} & \textbf{Namjena} \\
+        \midrule
+        \texttt{DRIVE\_V4}     & 0,821 m & 0,20 m & vožnja praznog robota kroz prolaze \\
+        \texttt{DETECTION\_V4} & 1,38 m  & 0,40 m & ruke razmaknute, kamere zapešća gledaju kutiju \\
+        \texttt{GRASP\_V4}     & 0,84 m  & 0,40 m & jastučići neposredno uz bočne plohe kutije \\
+        \texttt{CARRY\_V4}     & 0,82 m  & 0,10 m & nošenje kutije kroz prolaz \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Vrijedi istaknuti odnos širina iz tablice~\ref{tab:poze}. Poza hvata široka je 0,84 m, a poza
+detekcije čak 1,38 m --- obje su \textbf{šire od prolaza} (0,98 m za prvu je tijesno, druga ne
+prolazi uopće). Provjera nad cijelim prostorom rješenja inverzne kinematike pokazala je da je to
+neizbježno: zbog položaja zapešća na osi prilaza, \textbf{svih 1620} pronađenih rješenja
+vodoravnog hvata daje širinu oko 1,00 m. Zaključak je da hvat i prolaz nisu ista poza i ne mogu
+to biti, pa robot nakon podizanja kutije obavezno prelazi u užu pozu nošenja.
+
+\subsection{Slijed hvatanja}
+
+Hvat se izvodi u koracima, pri čemu svaki korak ima vlastitu provjeru:
+
+\begin{enumerate}\setlength\itemsep{0.1em}
+    \item Klizači se dižu na 0,40 m, a ruke se \textbf{istovremeno} podižu kroz točku 12 cm iznad
+          poze detekcije, čime se izbjegava zapinjanje za ploču stola.
+    \item Ruke se spuštaju ravno u pozu detekcije.
+    \item Baza se primiče 0,245 m, do udaljenosti s koje obje kamere na zapešćima vide svoj marker.
+    \item Iz oba se markera izračuna središte kutije. Izmjereni razmak markera iznosi 0,300 m, što
+          odgovara stvarnom bridu i ujedno služi kao provjera ispravnosti mjerenja.
+    \item Ruke prelaze u pozu hvata, pa se vrhovi alata vode u središta markera --- ravnom
+          kartezijskom linijom, s dubinom dodira od \textbf{2 mm}.
+    \item Nakon dokazanog obostranog dodira uspostavlja se kruta veza, desni se jastučić rastereti
+          za 2 mm, a kutija se diže \textbf{klizačima} za 0,15 m.
+    \item Kutija se privuče 15 cm prema tijelu robota, ruke prelaze u pozu nošenja, baza se odmakne
+          0,50 m od stola i klizači se spuštaju na 0,10 m.
+\end{enumerate}
+
+\begin{figure}[!htbp]
+    \centering
+    \begin{minipage}{0.475\textwidth}\centering
+        \includegraphics[width=\linewidth]{pickup.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.475\textwidth}\centering
+        \includegraphics[width=\linewidth]{pickup_vies2.png}
+    \end{minipage}
+    \caption{Dvoručni hvat: ruke prilaze kutiji u pozi hvata (lijevo) i jastučići naliježu na suprotne bočne plohe (desno)}
+    \label{fig:hvat}
+\end{figure}
+
+Dubina dodira od 2 mm nije proizvoljna. Veći pritisak kutiju \textbf{izbacuje} --- fizikalni
+mehanizam tada istovremeno rješava dodir dvaju jastučića i krutu vezu, pa objekt postaje
+preodređen. Cilj dodira je dokazati kontakt, a ne stvoriti silu trenja.
+
+Izmjerena točnost vođenja: vrh alata zaustavlja se \textbf{0,9 do 4,3 mm} od zadane točke, a
+klizači dostižu zadanu visinu s pogreškom \textbf{0,0000 m}.
+
+\subsection{Uvjet za uspostavu veze}
+
+Kruta veza između kutije i zapešća ne uspostavlja se na temelju naredbe nego na temelju
+\textbf{dokaza}: potreban je istovremen dodir na obje strane, pri čemu se broji isključivo dodir
+s kutijom --- imena tijela u dodiru čitaju se iz poruke senzora, pa dodir stola ili vlastitog
+tijela ne prolazi. Ako uvjet nije ispunjen, ruke se rasterete i misija se prekida.
+
+% =====================================================================
+\section{ORKESTRACIJA MISIJE}
+\label{sec:misija}
+% =====================================================================
+
+\subsection{Tijek misije}
+
+Misija je izvedena kao stroj stanja s \textbf{osam koraka}, prikazanih na slici~\ref{fig:misija}.
+Robot se stvara s raširenim rukama, sam ih slaže u pozu vožnje --- namjerno \textbf{pred
+korisnikom}, da se vidi da poza nije unaprijed namještena --- i zatim \textbf{čeka}. Tek nakon
+naredbe korisnika kreće ostatak misije.
+
+\begin{figure}[!htbp]
+    \centering
+    \resizebox{0.78\textwidth}{!}{\input{slike/tikz/misija.tex}}
+    \caption{Koraci misije; svaki korak provjerava vlastiti ishod, a neuspjeh vodi u pošten
+             prekid umjesto u nastavak}
+    \label{fig:misija}
+\end{figure}
+
+Cijela se misija pokreće \textbf{jednom naredbom}. Sastavljanje sustava izvedeno je s vremenskim
+odmakom: simulator kreće odmah, navigacijski sloj nakon 6 s, prikaz nakon 8 s, a upravljanje
+zadatkom nakon 10 s.
+
+\begin{figure}[!htbp]
+    \centering
+    \begin{minipage}{0.475\textwidth}\centering
+        \includegraphics[width=\linewidth]{gui.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.475\textwidth}\centering
+        \includegraphics[width=\linewidth]{robot_box_door.png}
+    \end{minipage}
+    \caption{Upravljački panel s prikazom koraka misije (lijevo) i prijenos kutije kroz prolaz (desno)}
+    \label{fig:panel}
+\end{figure}
+
+\subsection{Odlaganje kutije}
+
+Kad robot dođe pred odredišni stol, kutija koju nosi zaklanja marker na koji je treba
+spustiti. Zato se središte markera očita ranije, s prilazne poze, i zapamti u koordinatnom
+sustavu odometrije.
+
+Ruke s kutijom zatim se podignu iznad razine ploče stola, baza se primakne stolu koliko je
+moguće, a robot se bočnim gibanjem poravna sa zapamćenim središtem markera. Ruke jednim
+ravnim pokretom dovedu kutiju iznad središta i spuštaju je brzinom 1 cm/s. Kad kutija sjedne
+na ploču, otpušta se veza i jastučići se odmiču s njezinih ploha.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.46\textwidth]{drop.png}
+    \caption{Kutija odložena na marker: oko nje ostaje jednak rub markera sa svih strana}
+    \label{fig:odlaganje}
+\end{figure}
+
+% =====================================================================
+\section{REZULTATI I ISPITIVANJA}
+\label{sec:rezultati}
+% =====================================================================
+
+\subsection{Način ispitivanja}
+
+Ispitivanje je vođeno po pravilu \textbf{jedan prirast --- jedno izvođenje}: nakon svake izmjene
+pokreće se cjelovito izvođenje i njegov se ishod, uspješan ili ne, zapisuje s izmjerenim
+brojevima. Tijekom rada zabilježeno je oko osamdeset takvih izvođenja.
+
+Svaki dovršeni podsustav potvrđen je vizualno, u punom prikazu simulatora.
+
+\subsection{Izmjereni rezultati}
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Ključna ispitivanja i izmjereni rezultati}
+    \label{tab:rezultati}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l X l@{}}
+        \toprule
+        \textbf{Ispitivanje} & \textbf{Izmjereno} & \textbf{Ishod} \\
+        \midrule
+        Omnidirekcijsko gibanje & čisto bočno gibanje bez zakreta, vožnja unatrag bez zanošenja & prošlo \\
+        Kvaliteta karte         & vrata 0,980 m, os prolaza 0,0 cm, nagib lica $\le$ 0,02$^\circ$ & prošlo \\
+        Točnost lokalizacije    & vršna pogreška 3,0 cm ($x$), 2,9 cm ($y$), 0,3$^\circ$ & prošlo \\
+        Prolazak kroz vrata     & 5 od 5 prolaza; najmanji bočni razmak 3,0--6,1 cm & prošlo \\
+        Vožnja do plave sobe    & 33,1 s od polazišta do ciljne poze & prošlo \\
+        Vožnja do crvenog stola & 60,6 s, završna poza 4,693 m / $-$0,016 m / 3,5$^\circ$ & prošlo \\
+        Točnost hvata           & vrh alata 0,9--4,3 mm od zadane točke & prošlo \\
+        Dizanje klizačima       & zadano 0,5500 m, izmjereno 0,5500 m (pogreška 0,0000 m) & prošlo \\
+        Odlaganje na marker     & donja ploha 4 mm iznad ploče; središte \textbf{5 mm} od markera & prošlo \\
+        Negativno: kutija izvan dohvata & prekid bez uspostave veze & prošlo \\
+        Negativno: marker zaklonjen      & prekid prije spuštanja, kutija ostaje u rukama & prošlo \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Cjelovito izvođenje misije}
+
+Posljednje potvrđeno izvođenje provedeno je u punom prikazu simulatora. Iz zapisa su izdvojeni
+redci koji nose mjerenja:
+
+\begin{lstlisting}[style=log]
+mission: drive posture ... verified
+WAITING for the user: press "MISIJA: po kutiju" ...
+NAV: arrived at "blue:dock"
+STEP5d left tool tip 1.1 mm from its target
+CARRIAGE LIFT MEASURED left=0.5500 right=0.5500 m
+NAV: arrived at "red:dock"
+PLACE step 6: the arms carry the cube +19.6 cm forward and +1.3 cm across
+PLACE the cube bottom is +4 mm from the table top
+PLACE VERIFIED: the centre of the cube is 5 mm from the marker centre
+MISSION COMPLETE: the cube is on the marker.
+\end{lstlisting}
+
+Uspjeh potvrđuje tek posljednja provjera: ponovno mjerenje položaja kutije nakon što su je ruke
+pustile.
+
+\subsection{Negativna ispitivanja}
+
+Ispitivanja u kojima sustav \textbf{mora} odustati provedena su namjerno, jer sustav koji uvijek
+javlja uspjeh ne dokazuje ništa. Kutija je postavljena izvan dohvata ruku, a u drugom pokusu
+zaklonjen je marker odlaganja. U oba slučaja misija je prekinuta prije nego što je učinjena
+nepovratna radnja: u prvom nije uspostavljena veza s kutijom, a u drugom kutija nije puštena nego
+je ostala u rukama.
+
+% =====================================================================
+\section{OGRANIČENJA I ODSTUPANJA}
+\label{sec:ogranicenja}
+% =====================================================================
+
+Svako odstupanje od zadatka opisano je istim redoslijedom: što je traženo, što je pokušano, što je
+pritom izmjereno, koji je uzrok i što je napravljeno umjesto toga.
+
+\subsection{Držanje kutije trenjem}
+
+U konačnoj izvedbi kutija se drži krutom vezom koja se uspostavlja tek nakon dokazanog obostranog
+dodira. Podizanje kutije samim trenjem izvedeno je i radilo je: uz zaseban aktuatorski profil u
+kojem ruke i klizači rade na sučelju sile, procijenjena sila pritiska iznosila je \textbf{3,58 N}
+lijevo i \textbf{3,85 N} desno, a kutija se podizala.
+
+Razlog zbog kojeg to rješenje nije ušlo u misiju je \textbf{nedostatak ponovljivosti}. Upravljanje
+je pozicijsko, pa se sila pritiska ne zadaje nego procjenjuje, a nesigurnost te procjene prevelika
+je da bi zahvat ostao stabilan kroz cijelu vožnju. Zahvat time nije stabilno određen, i to ni u
+jednoj od dvije moguće izvedbe.
+
+Pritisak \textbf{dvjema točkama}, zatvorenim jastučićima na suprotnim plohama, ne sprječava zakret
+kutije. Mala razlika između ruku dovoljna je da jedna strana popusti, nakon čega kutija ispada.
+
+Pritisak \textbf{četirima točkama}, otvorenim hvataljkama, zahtijeva istovremen dodir svih
+prstiju. Kako su prsti kruti, pravac koji oni tvore mora se savršeno poravnati s plohom kutije;
+svako odstupanje znači da dodir ostvaruju samo dva prsta, pa zahvat opet nije određen.
+
+Za predaju je stoga odabrano rješenje koje je ponovljivo. Kruta veza pritom nije teleportiranje:
+uspostavlja se tek kad senzori na obje strane potvrde dodir s kutijom.
+
+\subsection{Hvataljke nisu prikladne za ovakav zadatak}
+
+Ovo ograničenje nije posljedica izvedbe nego \textbf{izbora opreme u samom zadatku}. Hvataljka
+Robotiq 2F-85 ima hod prstiju 85 mm, a zadatak traži podizanje kutije brida 300 mm. Odnos je
+takav da o obuhvatu nema govora --- prsti ne mogu zahvatiti nijedan brid, niti se kutija može
+uhvatiti za rub.
+
+Posljedica je da se klasični zahvat, u kojem prsti tvore geometrijsko zatvaranje oko predmeta,
+uopće ne može ostvariti. Ono što ostaje jest pritisak dviju zatvorenih šaka na suprotne plohe,
+dakle zahvat koji u potpunosti ovisi o trenju i o tome da obje ruke djeluju istovremeno i
+simetrično. Takav je zahvat osjetljiv na svako odstupanje: nekoliko milimetara razlike među
+rukama pretvara pritisak u guranje kutije po stolu.
+
+Za ovakav bi zadatak prikladnije bilo drukčije rješenje --- veća hvataljka ili hvataljka s
+prilagodljivim prstima, vakuumski prihvat na gornjoj plohi ili podizanje podvlačenjem, poput
+viličara. To, međutim, izlazi iz okvira zadanog modela robota, pa je rješenje potraženo unutar
+onoga što je zadano.
+
+\subsection{Ostala odstupanja}
+
+\begin{table}[!htbp]
+    \centering
+    \caption{Preostala odstupanja od zadatka}
+    \label{tab:odstupanja}
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l X X@{}}
+        \toprule
+        \textbf{Zahtjev} & \textbf{Odstupanje} & \textbf{Uzrok} \\
+        \midrule
+        R-08 & Upotrijebljen \texttt{mecanum\_drive\_controller} umjesto pogonskog kontrolera proizvođača baze & taj kontroler nije dostupan za korištenu inačicu ROS-a 2 \\
+        R-11 & Prolaz je širok 0,98 m, a ne 0,80 m kako je spomenuto u zadatku & robot je s uvučenim rukama širok 0,821 m, pa je otvor od 0,80 m za njega neprohodan; umjesto toga otežana su druga mjerila --- dva prolaza, u oba smjera, sa i bez kutije \\
+        R-06 & Mase vodilica i klizača su procijenjene (12 kg i 2 kg) & proizvođač vodilica ne objavljuje te podatke \\
+        R-17 & Kutiju drže obje ruke, ali kruta veza postoji samo na lijevom zapešću & dvije istovremene krute veze čine kutiju preodređenom i ruše numeričko rješavanje fizike \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Što bi bio sljedeći korak}
+
+Prirodan nastavak rada je uklanjanje prve stavke: ponovno uvođenje hvata trenjem, ali tek nakon
+što se razriješi asimetrija između ruku, koja je i bila stvarni uzrok nestabilnosti. Uz to bi
+vrijedilo zamijeniti hvataljke prihvatom primjerenim veličini predmeta, čime bi i cijeli zahvat
+postao jednostavniji i robusniji. Naposljetku, mase i tromosti torza trebalo bi zamijeniti
+stvarnim podacima, jer o njima izravno ovisi vjerodostojnost svake dinamičke simulacije.
+
+% =====================================================================
+\section{ZAKLJUČAK}
+% =====================================================================
+
+U radu je izrađen cjelovit simulacijski model dvorukog mobilnog robota i na njemu izvedena
+autonomna misija koja se pokreće jednom naredbom: robot čeka naredbu korisnika, odvozi se u
+zadanu sobu, pronalazi kutiju, podiže je objema rukama, prenosi kroz vrata i odlaže na označeno
+mjesto. Središte kutije pritom sjeda \textbf{5 mm} od središta odredišnog markera.
+
+Od 21 postavljenog zahtjeva ispunjeno je 17 u cijelosti, a tri uz odstupanja koja su opisana i
+obrazložena. Tehnički su najzahtjevnija bila dva dijela. Prvi je prolazak kroz otvor koji je od
+robota širi svega osam centimetara po strani, riješen jedinstvenom plohom cijene umjesto
+uobičajenog napuhavanja prepreka i vođenjem prolaza kao zasebne, okomite dionice. Drugi je
+dvoručni hvat predmeta koji je tri i pol puta veći od raspona hvataljke, riješen istovremenim
+pritiskom dviju zatvorenih šaka uz uspostavu veze tek nakon dokazanog obostranog dodira.
+
+Metodološki, najkorisnijim se pokazalo pravilo da se svaka tvrdnja mora moći izmjeriti. Nekoliko
+problema koji su dugo izgledali kao pogreške u upravljanju --- klizači koji se ne dižu, ruka koja
+prolazi kroz nogu stola, lokalizacija pomaknuta za nekoliko centimetara --- imalo je uzrok u
+jednoj krivo postavljenoj vrijednosti ili u pojednostavljenom modelu okoline, a otkriveni su tek
+kad su provjere prestale ovisiti o naredbi koju sustav sam izdaje. Iz istog razloga sustav radije
+prekida izvođenje nego što nastavlja s nepouzdanim podatkom.
+
+Model je time spreman kao podloga za daljnji rad: za uvođenje upravljanja silom pri hvatu, za
+zamjenu prihvata primjerenijeg veličini predmeta i, konačno, za prijenos istih upravljačkih
+slojeva na stvarni robot, budući da je cijeli sustav izgrađen na sučeljima koja se pri tom
+prijenosu ne mijenjaju.
+
+% =====================================================================
+% LITERATURA
+% =====================================================================
+\newpage
+\begin{thebibliography}{99}
+\addcontentsline{toc}{section}{LITERATURA}
+
+\bibitem{zadatak}
+B.~Ćaran, \textit{Izrada simulacijskog modela DUAL ARM robota u Gazebo okruženju},
+zadatak kolegija Projektiranje autonomnih sustava, Fakultet strojarstva i brodogradnje,
+Sveučilište u Zagrebu, 30.~11.~2025.
+
+\bibitem{mail}
+B.~Ćaran, \textit{PAS -- Dual arm robot -- Podaci}, dopis s izvorima modela i opisom
+scenarija, 4.~5.~2026.
+
+\bibitem{ros2}
+Open Robotics, \textit{ROS 2 Documentation: Humble Hawksbill},
+\url{https://docs.ros.org/en/humble/}
+
+\bibitem{gazebo}
+Open Robotics, \textit{Gazebo Fortress Documentation},
+\url{https://gazebosim.org/docs/fortress/}
+
+\bibitem{ros2control}
+\textit{ros2\_control: Control Framework for ROS 2},
+\url{https://control.ros.org/humble/}
+
+\bibitem{moveit}
+PickNik Robotics, \textit{MoveIt 2 Documentation},
+\url{https://moveit.picknik.ai/humble/}
+
+\bibitem{nav2}
+S.~Macenski, F.~Martín, R.~White, J.~Ginés Clavero, \textit{The Marathon 2: A Navigation System},
+IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2020.
+
+\bibitem{slam}
+S.~Macenski, I.~Jambrecic, \textit{SLAM Toolbox: SLAM for the dynamic world},
+Journal of Open Source Software, sv.~6, br.~61, 2021.
+
+\bibitem{aruco}
+S.~Garrido-Jurado, R.~Muñoz-Salinas, F.~J.~Madrid-Cuevas, M.~J.~Marín-Jiménez,
+\textit{Automatic generation and detection of highly reliable fiducial markers under occlusion},
+Pattern Recognition, sv.~47, br.~6, str.~2280--2292, 2014.
+
+\bibitem{omnibase}
+PAL Robotics, \textit{omni\_base\_simulation}, licenca Apache-2.0, verzija \texttt{77248ac},
+\url{https://github.com/pal-robotics/omni\_base\_simulation}
+
+\bibitem{kortex}
+Kinova Robotics, \textit{ros2\_kortex}, licenca BSD, verzija \texttt{116d87a},
+\url{https://github.com/Kinovarobotics/ros2\_kortex}
+
+\bibitem{pantilt}
+I-Quotient Robotics, \textit{pan\_tilt\_ros}, licenca MIT, verzija \texttt{9b08758},
+\url{https://github.com/I-Quotient-Robotics/pan\_tilt\_ros}
+
+\bibitem{realsense}
+Intel RealSense, \textit{realsense-ros}, licenca Apache-2.0, verzija \texttt{6d87b07},
+\url{https://github.com/realsenseai/realsense-ros}
+
+\bibitem{arucoros}
+PAL Robotics, \textit{aruco\_ros}, licenca MIT, verzija \texttt{86a0bbb},
+\url{https://github.com/pal-robotics/aruco\_ros}
+
+\bibitem{predavanja}
+\textit{Materijali kolegija Projektiranje autonomnih sustava}, Fakultet strojarstva i
+brodogradnje, Sveučilište u Zagrebu, 2026.
+
+\end{thebibliography}
+
+% =====================================================================
+% PRILOZI
+% =====================================================================
+\newpage
+\section*{PRILOZI}
+\addcontentsline{toc}{section}{PRILOZI}
+
+\subsection*{Prilog A: Repozitorij}
+
+Cjelokupan izvorni kod, opis modela, konfiguracije, karta i upute za pokretanje nalaze se u
+javnom repozitoriju:
+
+\begin{center}
+\url{https://github.com/KxHartl/PAS-DUAL-ARM}
+\end{center}
+
+Datoteka \texttt{README.md} sadrži preduvjete, postupak instalacije i pokretanja te popis
+vanjskih paketa s autorima, licencama i točnim verzijama. Detaljnije upute podijeljene su u
+\texttt{RUNNING.md} (rad po terminalima) i \texttt{MAPPING.md} (izgradnja karte od nule).
+
+\subsection*{Prilog B: Pokretanje misije}
+
+Preduvjeti su Ubuntu 22.04, ROS 2 Humble, Gazebo Fortress i pripadni paketi navedeni u
+\texttt{README.md}. Nakon dohvata repozitorija:
+
+\begin{lstlisting}[style=log]
+vcs import src < ros2.repos      # dohvat vanjskih paketa na zadanim verzijama
+./scripts/apply_patches.sh       # dvije dokumentirane zakrpe
+rosdep install --from-paths src --ignore-src -y -r
+./scripts/run_native.sh colcon build --symlink-install
+\end{lstlisting}
+
+Cijela se misija zatim pokreće jednom naredbom:
+
+\begin{lstlisting}[style=log]
+./scripts/run_native.sh ros2 launch pas_dual_arm_bringup mission.launch.py
+\end{lstlisting}
+
+Kad u zapisu piše \texttt{WAITING for the user}, na upravljačkom se panelu pritisne zeleni gumb
+\textbf{,,MISIJA: po kutiju``}. Sve dalje ide samostalno, do retka
+\texttt{MISSION COMPLETE}. Karta je već u repozitoriju, pa mapiranje nije potrebno za
+pokretanje.
+
+\subsection*{Prilog C: Datoteke za pokretanje}
+
+\begin{table}[!htbp]
+    \centering
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}l X@{}}
+        \toprule
+        \textbf{Datoteka} & \textbf{Što pokreće} \\
+        \midrule
+        \texttt{mission.launch.py}     & cijela misija iz jedne naredbe (simulator, navigacija, prikaz, zadatak) \\
+        \texttt{sim.launch.py}         & simulator, model robota, most prema ROS-u i osam kontrolera \\
+        \texttt{nav2.launch.py}        & karta, lokalizacija, Nav2, zone, navigacijski čvor i panel \\
+        \texttt{task.launch.py}        & MoveIt, detekcija markera i upravljanje zadatkom \\
+        \texttt{mapping.launch.py}     & \texttt{slam\_toolbox} i prikaz za izgradnju karte \\
+        \texttt{aruco.launch.py}       & četiri instance detektora markera \\
+        \texttt{display.launch.py}     & samo prikaz modela robota, bez simulacije \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection*{Prilog D: Provjere bez simulatora}
+
+Prije svakog pokretanja simulacije mogu se, i trebaju, pustiti provjere koje ne zahtijevaju
+simulator --- one provjeravaju je li karta prihvatljiva i jesu li navigacijske zone ispravno
+izvedene iz nje:
+
+\begin{lstlisting}[style=log]
+python3 scripts/check_doors.py        # vrata prepoznata iz karte
+python3 scripts/check_zones.py        # zone, portalne i prilazne poze
+python3 scripts/check_map_geometry.py # geometrijski uvjet prihvacanja karte
+\end{lstlisting}
+
+\end{document}
