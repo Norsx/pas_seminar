@@ -1,2 +1,99 @@
 \section{Percepcija}
 \label{sec:05-percepcija}
+
+% izvor: aruco_detector.py:1-20; notes/04_odluke/D-01_aruco_dict_4x4_50.md; D-02; P-07
+Percepcijski podsustav zadužen je za detekciju i praćenje objekata manipulacije, procjenu 6D poza
+radnih stolova i ciljnih markera te filtriranje laserskih mjerenja za sigurnu navigaciju. Sustav se
+oslanja na četiri ArUco markera rječnika \texttt{DICT\_4X4\_50}, primarnu RGB-D kameru Intel RealSense
+D435 na pan-tilt mehanizmu glave te dvije RGB-D kamere montirane na zapešćima ruku.
+
+\subsection{Detekcija ArUco markera (\texttt{aruco\_detector.py})}
+\label{sec:05-aruco}
+
+% izvor: aruco_detector.py:1-25; notes/03_problemi/P-07_aruco_dict_and_cv_bridge.md
+Paket \texttt{aruco\_ros} iz okruženja PAL Robotics \cite{arucoros} podržava samo vlastite rječnike
+i formate (npr. ARUCO\_MIP\_36h12), dok je za ovaj zadatak odabran standardni OpenCV rječnik
+\texttt{DICT\_4X4\_50} \cite{mail2026}. Usto, binarna verzija paketa \texttt{cv\_bridge} za ROS~2
+Humble izgrađena je protiv biblioteke NumPy~1.x i izaziva rušenje memorije (\emph{segfault}) u novijim
+Python okruženjima. Zato je razvijen vlastiti čvor \texttt{aruco\_detector.py} (odluka D-02).
+Slika se iz poruke \texttt{sensor\_msgs/Image} pretvara izravno u NumPy polje bez posredovanja
+\texttt{cv\_bridge}-a, a detekcija koristi OpenCV funkciju \texttt{detectMarkers} uz subpikselno
+poboljšanje kutova (\texttt{CORNER\_REFINE\_SUBPIX}):
+
+% izvor: src/pas_dual_arm_scripts/pas_dual_arm_scripts/aruco_detector.py:114-154
+\begin{lstlisting}[style=code-python, caption={Detekcija markera i rješavanje PnP problema (\texttt{aruco\_detector.py}, redci 114--154)}, label={lst:aruco}]
+corners, ids, _ = self.detector.detectMarkers(gray)
+if ids is not None:
+    for corner, marker_id in zip(corners, ids.ravel()):
+        if int(marker_id) != int(self.marker_id):
+            continue
+        half = self.marker_size / 2.0
+        obj_pts = np.array([[-half, half, 0], [half, half, 0],
+                            [half, -half, 0], [-half, -half, 0]], dtype=np.float64)
+        ok, rvec, tvec = cv2.solvePnP(
+            obj_pts, corner.reshape(4, 2).astype(np.float64),
+            self.camera_matrix, self.dist_coeffs,
+            flags=cv2.SOLVEPNP_IPPE_SQUARE)
+        if ok:
+            qx, qy, qz, qw = rvec_to_quat(rvec)
+            # Objava poze i slanje koordinatnog okvira u /tf
+            tf = TransformStamped()
+            tf.header = msg.header
+            tf.child_frame_id = self.marker_frame
+            tf.transform.translation.x = float(tvec[0])
+            tf.transform.translation.y = float(tvec[1])
+            tf.transform.translation.z = float(tvec[2])
+            tf.transform.rotation.x, tf.transform.rotation.y = qx, qy
+            tf.transform.rotation.z, tf.transform.rotation.w = qz, qw
+            self.tf_broadcaster.sendTransform(tf)
+\end{lstlisting}
+
+% izvor: aruco_detector.py:34-64, 124-128
+Položaj i orijentacija markera u odnosu na optički centar kamere računaju se metodom
+\texttt{solvePnP} uz specijalizirani rješavač za ravninske kvadrate \texttt{SOLVEPNP\_IPPE\_SQUARE}.
+Vektor rotacije (Rodrigues) pretvara se u kvaternion orijentacije Shepperdovim algoritmom preko traga
+rotacijske matrice, čime se izbjegavaju singulariteti Eulerovih kutova.
+
+\subsection{Raspored markera i uloga kamera}
+\label{sec:05-kamere}
+
+% izvor: seminar_world.sdf:275-350, 450-480; aruco.launch.py:1-85; P-19
+U sustavu se istodobno prate četiri markera:
+\begin{itemize}
+  \item \textbf{Marker ID~0} ($0{,}225$~m): smješten na gornjoj plohi kocke; primarna kamera glave čita ga pri dolasku na \texttt{blue:dock} i vodi robot u prilaznu točku pred stolom.
+  \item \textbf{Markeri ID~1 i ID~2} ($0{,}225$~m): nalaze se na lijevoj i desnoj bočnoj plohi kocke. Čitaju ih kamere na zapešćima ruku kada je robot pred stolom, jer je tada gornji marker pod prevelikim kutom skraćenja (problem P-19).
+  \item \textbf{Marker ID~3} ($0{,}360$~m): smješten na stolu u crvenoj sobi; služi kao referentna točka za spuštanje i završnu provjeru odlaganja.
+\end{itemize}
+
+\dvijeslike{k10_kamera_marker.png}{Detekcija gornjeg markera kocke primarnom kamerom glave}%
+  {k12_kamera_zapesca.png}{Pogled kamere zapešća prema bočnom markeru kocke}%
+  {Vizualna detekcija ArUco markera u simulaciji}{aruco-kamere}
+
+\subsection{Geometrijska verifikacija kocke (oblak točaka)}
+\label{sec:05-verifikacija}
+
+% izvor: main_task.py:1694-1794; notes/04_odluke/D-12_honesty_abort_over_fake.md
+Kako bi se spriječilo podizanje objekta na temelju pretpostavljene pozicije, čvor \texttt{main\_task}
+u koraku STEP3 provodi neovisnu geometrijsku verifikaciju kocke pomoću 3D oblaka točaka
+\texttt{/camera/points}. Oko detektirane poze markera izrezuje se prostorni segment točaka te se
+analizom glavnih komponenti (PCA) određuju dimenzije i nagib kocke. Prihvaćaju se samo objekti
+čija je duljina u rasponu od $0{,}15$ do $0{,}45$~m, visina od $0{,}06$ do $0{,}32$~m te čije
+središte ne odstupa više od $15$~cm od pozicije markera. U suprotnom se misija prekida uz poruku
+\texttt{no fake grasp} (pravilo D-12).
+
+\subsection{Obrada laserskih mjerenja i dinamički obris robota}
+\label{sec:05-scan-filter}
+
+% izvor: scan_filter.py:1-60; notes/03_problemi/P-39; footprint_publisher.py:1-60; D-19
+Laserska ravnina montirana je na visini $z = \SI{0.2086}{m}$. Zbog naginjanja ruku i spuštanja
+klizača, dijelovi konstrukcije mogu ući u lasersku zraku i stvoriti lažne prepreke. Čvor
+\texttt{scan\_filter.py} uklanja sva laserska očitanja koja leže unutar pravokutnika baze dimenzija
+$0{,}90 \times \SI{0.60}{m}$ ($\pm 0{,}45$~m po duljini i $\pm 0{,}30$~m po širini) i prosljeđuje
+pročišćeni sken na temu \texttt{/scan\_filtered}. Izvorna širina filtra od $0{,}47$~m u prolazu kroz
+vrata širine $1{,}0$~m maskirala je dovratnike i uzrokovala zamrzavanje Nav2 planera (problem P-39),
+što je otklonjeno smanjenjem poluširine na $0{,}30$~m.
+
+Čvor \texttt{footprint\_publisher.py} kontinuirano izračunava konveksnu ljusku robota iz URDF-a i
+trenutnih kutova zglobova te osvježava parametar \texttt{footprint} u lokalnom i globalnom costmapu
+na frekvenciji od 5~Hz, a nakon hvata u obris dodaje i poligon kocke na temi
+\texttt{/mission/carried\_points}.
