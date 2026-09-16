@@ -1,2 +1,89 @@
 \section{Rezultati, problemi i ograničenja}
 \label{sec:09-rezultati}
+
+% izvor: notes/05_povijest/runovi.md; notes/00_MAPA.md; notes/03_problemi/*; README.md §10
+U ovom poglavlju sažeti su kvantitativni eksperimentalni rezultati autonomne misije, analizirani
+ključni inženjerski problemi razriješeni tijekom razvoja te dokumentirana stvarna fizikalna i
+softverska ograničenja sustava u skladu s načelom inženjerske iskrenosti (odluka D-12).
+
+\subsection{Eksperimentalno izmjereni rezultati}
+\label{sec:09-mjerenja}
+
+% izvor: runovi.md (runovi 44, 60, 62, 70, M1, M4, T2); scripts/check_*.py
+Verifikacija sustava provedena je kroz seriju ciljanih pokusa u simulacijskom okruženju Gazebo
+Fortress. U tablici~\ref{tab:rezultati} prikazani su ključni izmjereni pokazatelji navigacijske,
+percepcijske i manipulacijske uspješnosti.
+
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setstretch{1.05}
+  \caption{Kvantitativni rezultati ključnih verifikacijskih pokusa i misijskih ciklusa}
+  \label{tab:rezultati}
+  \begin{tabularx}{\textwidth}{@{}>{\bfseries}p{1.8cm}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.2cm}@{}}
+    \toprule
+    Pokus / Run & Ispitivani podsustav & Izmjereni pokazatelji i tolerancije & Ishod i status \\
+    \midrule
+    Karta (run~60) & SLAM lasersko mapiranje (\texttt{slam\_toolbox}) & Otvor vrata $0{,}980$~m (nominalno $1{,}0$~m); os $0{,}0$~cm; debljina zida $120$~mm; RMS lica $\le \SI{2.3}{mm}$ & Prihvaćena finalna karta (\texttt{check\_map\_geometry}) \\
+    Lokalizacija (run~62) & AMCL probabilistička lokalizacija & $5/5$ prolaza kroz vrata bez prekida; vršna greška AMCL vs Gazebo $3{,}0$~cm ($X$), $2{,}9$~cm ($Y$), $0{,}3^\circ$ (yaw) & Validiran mjerni model (\texttt{loc\_error.py}) \\
+    Navigacija (run~70) & Potencijalna polja (odluka D-20) & Puni obilazak obaju stolova; razmak od prepreka $0{,}715$~m; uspješan dock i 1D undock & Potvrđeno kretanje bez kolizija i zastoja \\
+    Vožnja (run~M1) & Transportna poza ruku \texttt{DRIVE\_V4} & 9 zadanih ciljeva; 3 uzastopna prolaska kroz vrata; odstupanje ruku $0{,}000$~rad; bočni zazor $4{,}4$--$4{,}9$~cm & Validiran kinematički profil vožnje baze \\
+    Misija (run~M4) & Puni autonomni ciklus (jedna naredba) & Dvoručni hvat i dizanje na $0{,}55$~m; nošenje u \texttt{CARRY\_V4} ($0{,}821$~m); spuštanje na $+4$~mm od ploče stola & \texttt{PLACE VERIFIED: 5 mm} od centra; \texttt{MISSION COMPLETE} \\
+    Build (run~T2) & Reproducibilnost čistog repozitorija & $25/25$ paketa uspješno izgrađeno iz nule (\texttt{vcs import} uz zakrpe); 17/17 sistemskih provjera prolazi & Potvrđena prenosivost na čistim instalacijama \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Pregled ključnih problema i rješenja}
+\label{sec:09-problemi}
+
+% izvor: notes/03_problemi/P-09, P-13, P-15, P-17, P-35, P-39, P-40, P-43, P-45, P-46
+Razvoj autonomnog mobilnog manipulatora zahtijevao je rješavanje niza složenih problema
+uzrokovanih numeričkim nesavršenostima simulatora, geometrijom kinematičkih lanaca i međuovisnostima
+heterogenih ROS~2 paketa. U tablici~\ref{tab:problemi} sažeti su ključni problemi, njihovi fizikalni
+i programski uzroci te implementirana rješenja.
+
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setstretch{1.05}
+  \caption{Pregled ključnih inženjerskih problema riješenih tijekom razvoja sustava}
+  \label{tab:problemi}
+  \begin{tabularx}{\textwidth}{@{}>{\bfseries}p{1.4cm}>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Problem & Simptom i manifestacija & Fizikalni ili programski uzrok & Implementirano rješenje \\
+    \midrule
+    P-09 & Izostanak bočnog gibanja baze u Gazebu Fortress & PAL kontroler pisan za Gazebo Classic; Fortress dodaci se ne instanciraju & Konfiguriran \texttt{MecanumDriveController} uz valjkastu koliziju i anizotropno trenje kotača \\
+    P-13 & Linearne vodilice torza ne podižu teret ruku & Donji položaj ($0{,}05$~m) na graničniku gdje dodatak poništava brzinu & Postavljen početni položaj klizača na $0{,}06$~m (\texttt{initial\_value}) \\
+    P-15 & Kocka isklizava iz šaka prilikom dizanja & DART kontaktni rješavač u Fortressu ne drži statičko trenje pod stiskom & Uveden \texttt{DetachableJoint} uz obaveznu fizikalnu provjeru dodira senzora (D-05, D-12) \\
+    P-17 & Nestabilnost simulacije (eksplozija kocke u zrak) & Dvostruka kruta kinematička veza i aktivni IK čine preodređen sustav & Jednostrani spoj na lijevoj šaci; desni jastučić popušta $2$~mm i ostaje u kontaktu (D-07) \\
+    P-35, P-43 & Širina ruku veća od otvora vrata ($1{,}003 > 0{,}980$~m) & Vodoravni prilaz postavlja sferna zapešća u poprečnu liniju maksimalnog raspona & Prilaz pod nagibom od $55^\circ$ prema dolje (\texttt{GRASP\_V4}) i poza nošenja \texttt{CARRY\_V4} ($0{,}821$~m) \\
+    P-39 & Robot ulazi u vrata pod kutom i zapinje za dovratnik & NavFn planira točku bez orijentacije; filtar lidara brisao dovratnike & Usmjeravajuće trake u \texttt{nav\_zones}, sužen filtar na $0{,}30$~m, brazde nulte cijene \\
+    P-40 & AMCL procjena poze odstupa od lidara za 6~cm & Gruba rešetka karte ($0{,}05$~m) umjetno podebljala zidove na $178$~mm & Karta rešetke $0{,}02$~m s 1080 zraka lidara i podešenim \texttt{likelihood\_field} modelom \\
+    P-45 & Misija staje pred stolom ili gubi naredbu odvajanja & Latched statusi navigacije i gubitak poruke \texttt{ign topic} bez potvrde & Stanja u zatvorenoj petlji; dvostruki ROS/Ignition most za detach uz provjeru \texttt{/aruco\_box/state} \\
+    P-46 & Čisti klon s GitHuba ne prolazi proces izgradnje & U \texttt{ros2.repos} greškom upisan lokalni neprenosivi commit & Pinani stvarni upstream commitovi uz lokalne zakrpe u direktoriju \texttt{patches/} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Identificirana ograničenja sustava}
+\label{sec:09-ogranicenja}
+
+% izvor: notes/03_problemi/*; notes/07_predaja/odstupanja.md; README.md §10
+Iako je cjelovita misija uspješno demonstrirana u simulaciji, sustav posjeduje određena
+ograničenja koja valja uzeti u obzir:
+\begin{enumerate}
+  \item \textbf{Ograničenje trenja fizikalnog rješavača}: Podizanje tereta oslanja se na dodatak
+    \texttt{DetachableJoint} jer DART fizikalni pogon u Gazebo Fortressu ne može pouzdano simulirati
+    suho Coulombovo trenje između paralelnih ploha pod dinamičkim opterećenjem bez proklizavanja.
+  \item \textbf{Osjetljivost percepcije na kut promatranja}: Detekcija ArUco markera kamerom glave
+    postaje nepouzdana pri udaljenostima manjim od $\SI{0.60}{m}$ zbog oštrog kuta skraćenja, što je
+    zahtijevalo uvođenje dodatnih kamera na zapešćima ruku.
+  \item \textbf{Fiksna geometrija manipulacijskog objekta}: Sustav je dimenzioniran i provjeren za
+    kocku brida $\SI{0.30}{m}$. Manipulacija objektima znatno različitih dimenzija ili nepravilnih
+    oblika zahtijevala bi prilagodbu kinematičkih konfiguracija i pragova geometrijskih filtara.
+  \item \textbf{Numerička zahtjevnost simulacije}: Zbog istodobnog izvođenja fizike krutih tijela,
+    kontaktne dinamike, obrade četiriju kamera, simulacije 1080 zraka lidara te rada stogova MoveIt~2
+    i Nav2, sustav zahtijeva značajne računalne resurse kako faktor realnog vremena (RTF) ne bi pao
+    ispod stabilne radne točke.
+\end{enumerate}
