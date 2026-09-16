@@ -155,12 +155,14 @@ upućuje s `\ref`, kod se ne ponavlja u poglavljima.
 
 - [x] Analiza projekta, plan (ovaj fajl), `STATE.md`, metapodaci u `project.yaml`
 - [x] Tectonic instaliran (`~/.local/bin/tectonic`)
-- [ ] `latex_architect`: predložak, naslovnica s 3 izvođača, **str. 2 GitHub + autori**, popisi,
+- [x] `latex_architect`: predložak, naslovnica s 3 izvođača, **str. 2 GitHub + autori**, popisi,
       `listings`, TikZ, makroi `\slika`/`\dvijeslike` s rezervnim okvirom, stubovi 10 poglavlja + 2 priloga, build
-- [ ] Generirane slike G03 (izbačeno — zahtjevi su tablica), G04–G12
-- [ ] `writer`: 1–3 (uvod, arhitektura, model i okruženje)
-- [ ] `writer`: 4–6 (upravljanje, percepcija, navigacija)
-- [ ] `writer`: 7–10 + prilozi (manipulacija, misija, rezultati, zaključak, pokretanje, kod)
+- [x] G01, G02, G10, G11 gotove; G03 izbačena (zahtjevi su tablica); G04–G09, G12 = TikZ, rade writeri
+- [x] Bibliografija `docs/references.bib` (samo izvori iz projekta)
+- [x] Prve snimke korisnika: `k03_gazebo_svijet`, `k09_nav_gui`, `k16_hvat_dizanje`, `k21_odlaganje`
+- [~] `writer`: 1–3 (uvod, arhitektura, model i okruženje)
+- [~] `writer`: 4–6 (upravljanje, percepcija, navigacija)
+- [~] `writer`: 7–10 + prilozi (manipulacija, misija, rezultati, zaključak, pokretanje, kod)
 - [ ] Build bez grešaka, tijelo ≈ 20 str. (`latex_surgeon` ako treba)
 - [ ] `qa_reviewer` → `docs/REVIEW.md` (svaka tvrdnja ima izvor u projektu; ništa bitno preskočeno)
 - [ ] Ispravci po recenziji
