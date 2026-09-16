@@ -62,27 +62,27 @@ projektu“).
 
 ## 3. Struktura dokumenta
 
-Prednji dio: naslovnica → **str. 2 GitHub repozitorij + autori** → Sadržaj → Popis slika → Popis
-tablica. Ciljani opseg tijela: **~35–50 stranica** (s puno slika).
+**Opseg (korisnik, 16. 9.): tijelo ~20 stranica** (Uvod → Zaključak, sa slikama). Ne pretjerivati s
+opisima, ali **ništa bitno ne preskočiti**: svaki podsustav mora biti objašnjen dovoljno da čitatelj
+razumije *kako je napravljen*. Pravilo gustoće: umjesto proze → kompaktne tablice (parametri,
+čvorovi, kontroleri, senzori); slike u parovima (`\dvijeslike`) ili nizovima; bez ponavljanja istog
+podatka u dva poglavlja (referenca `\ref` umjesto ponavljanja).
+Prednji dio (naslovnica, **str. 2 GitHub + autori**, sadržaj, popisi) i prilozi **ne ulaze** u 20 stranica.
 
-| # | Datoteka | Poglavlje | Sadržaj (obavezno) | Glavni izvori | Slike |
-|---|---|---|---|---|---|
-| 1 | `00-uvod.tex` | UVOD | zadatak [ZAD] i konkretizacija iz [MAIL]; cilj misije u jednoj rečenici; korišteni alati; tko je što radio (samo ako piše u projektu); pregled poglavlja | `izvori.md`, `00_MAPA.md` R0, README uvod | G02 (mail slika) |
-| 2 | `01-zahtjevi.tex` | ZADATAK I ZAHTJEVI | izvori zahtjeva (ZAD/MAIL/VLAST), razlaganje na R-01…R-20, tablica zahtjeva sa statusom i gdje je riješen, kriteriji prihvaćanja | `izvori.md`, `00_MAPA.md`, `notes/01_zahtjevi/R-*.md` | G03 (stablo zahtjeva) |
-| 3 | `02-arhitektura.tex` | ARHITEKTURA SUSTAVA | **nacrt arhitekture**: slojevi (Gazebo ↔ `ros_gz_bridge`/`ign_ros2_control` ↔ controller_manager ↔ MoveIt/Nav2 ↔ aplikacijski čvorovi); popis čvorova s odgovornostima; ključni topici/akcije/servisi; TF lanac `map→odom→base_footprint→…`; hijerarhija launch datoteka (`mission.launch.py` → `sim`/`nav2`/`task`); struktura repozitorija i 4 vlastita paketa; vanjski paketi (`ros2.repos`, zakrpe); projektno okruženje (`run_native.sh`) | `src/*/launch/*.py`, `setup.py`, `bridge.yaml`, `ros2.repos`, `patches/`, S-10, README §8–9 | G04 arhitektura, G05 launch, G06 stablo repozitorija, K25 |
-| 4 | `03-model-robota.tex` | MODEL ROBOTA | kompozicija `robot.urdf.xacro` (redoslijed uključivanja); baza (PAL omni_base, kotači, trenje); torzo (STL B. Ćaran, geometrija montaže iz CAD mjera, prismatic hod, mase — procjena); 2× Kinova Gen3 7-DOF + Robotiq 2F-85 (prefiksi, montaža); pan-tilt + D435; **svi senzori s parametrima** (lidar, RGBD glava, 2× RGBD zapešća, kontaktni, FT); `ros2_control` hardverski blokovi; DetachableJoint; poze ruku (`postures.py`) i izmjerene širine (`08_poze.md`); zakrpe upstream paketa | `robot.urdf.xacro`, `base/*.xacro`, `dual_arm_torso.urdf.xacro`, `postures.py`, S-01 (geometrija), `08_poze.md`, `patches/` | G01 CAD mjere, G07 URDF stablo, K01, K02, K06, K13/K17 (poze) |
-| 5 | `04-okruzenje.tex` | SIMULACIJSKO OKRUŽENJE | `seminar_world.sdf`: tri sobe u L, dimenzije, vrata, stolovi, kutija (masa, trenje, markeri na plohama), marker odlaganja; `sim.launch.py` korak po korak (resource path, xacro, uklanjanje negativnih skala, spawn, spawneri, headless); `bridge.yaml` | `seminar_world.sdf`, `sim.launch.py`, `bridge.yaml`, D-13, D-14 | G08 tlocrt svijeta, K03, K04, K05 |
-| 6 | `05-upravljanje.tex` | UPRAVLJANJE (ros2_control) | controller_manager; svih 8 kontrolera (tip, zglobovi, sučelja) iz `controllers.yaml`; `mecanum_drive_controller` (parametri kinematike); JTC ruku/torza/pan-tilta; hvataljke; `position` vs `effort`+PID profil (`force_controllers.yaml`, D-21); lanac naredbi baze (`/cmd_vel` → collision monitor → `cmd_vel_relay` → kontroler) | `controllers.yaml`, `force_controllers.yaml`, `cmd_vel_relay.py`, `collision_monitor.yaml`, D-21, P-09 | G09 tok naredbi, K26 |
-| 7 | `06-percepcija.tex` | PERCEPCIJA | `aruco_detector` (rječnik, veličina, PnP metoda, izlazi); markeri na kutiji i stolu; kamera glave + oblak točaka; kamere na zapešćima; mjerenje kutije i cross-check; `scan_filter`, `cloud_restamp`, `robot_extent`/`footprint_publisher`; pravila naučena iz problema (P-19, P-22) | `aruco_detector.py`, `main_task.py` (percepcija), `scan_filter.py`, `robot_extent.py`, D-01, D-02 | K10, K11, K12 |
-| 8 | `07-navigacija.tex` | MAPIRANJE I NAVIGACIJA | SLAM (`mapping.launch.py`, `slam_params.yaml`, `mapping_tour`, gate-ovi karte `check_map*.py`); karta; lokalizacija AMCL; Nav2 konfiguracija (planer, upravljač, costmapovi); `feature_registry` (vrata i stolovi iz karte); `nav_zones` jedinstveno potencijalno polje (D-20); `room_navigator` (graf soba, portalne i dock poze, gate ruku, `navigate_through_poses`); dinamički obris (D-19); collision monitor; `nav_gui`; `loc_error` | `nav2.launch.py`, `mapping.launch.py`, `nav2_params.yaml`, `slam_params.yaml`, `feature_registry.py`, `nav_zones.py`, `room_navigator.py`, `footprint_publisher.py`, `MAPPING.md`, D-16, D-19, D-20, P-39, P-40 | G10 karta, G11 zone/polje, K07, K08, K09, K19 |
-| 9 | `08-manipulacija.tex` | MANIPULACIJA I DVORUČNI HVAT | MoveIt konfiguracija (SRDF grupe, kinematika, OMPL, kontroleri); sučelja koja `main_task` koristi (move action, IK, kartezijski put); zašto squeeze (hvataljka 85 mm vs kocka 0.30 m); slijed STEP0–STEP7 iz koda (poze DETECTION_V4 → GRASP_V4 → dovođenje vrhova na centre markera → dokaz kontakta → attach → dizanje na vodilicama → odmak → CARRY_V4); gate-ovi poštenja | `pas_dual_arm_moveit_config/*`, `main_task.py` (`run()`), `postures.py`, `kinematics.py`, `force_model.py`, D-05, D-06, D-07, D-12, P-14, P-15, P-17 | K24, K13–K17 |
-| 10 | `09-misija.tex` | ORKESTRACIJA MISIJE | `mission.launch.py`; 8 misijskih koraka (`_report_mission_step`); čekanje korisnika (`/mission/start`, gumb); vožnja preko `room_navigator`-a; nošenje kroz vrata (referentna poza i gate); **odlaganje na marker u 11 koraka** (`_place_on_marker`) s provjerama visine i položaja; povratak u pozu vožnje; očekivani log | `mission.launch.py`, `task.launch.py`, `main_task.py`, P-45, `notes/00_run/00_testing/misija.md` | G12 dijagram stanja misije, K18, K20–K23 |
-| 11 | `10-rezultati.tex` | REZULTATI I VERIFIKACIJA | offline provjere (`check_doors`, `check_zones`, `check_map`); vožnja kroz vrata (run 62, M1: brojke); točnost lokalizacije (`loc_error`); puna misija M4 (brojke odlaganja); test svježeg klona (M5 + popravak); testovi paketa | `runovi.md` (62, 70, M1, M4, M5), P-40, P-45, S-10, `test/` | tablice |
-| 12 | `11-problemi.tex` | KLJUČNI PROBLEMI I RJEŠENJA | 6–8 najvažnijih P-kartica, svaka: simptom → pokušaji (sažeta tablica) → uzrok → rješenje. Prijedlog: P-09, P-15, P-17, P-35/P-43, P-39, P-40, P-45, P-46 | `notes/03_problemi/` | — |
-| 13 | `12-ogranicenja.tex` | ODSTUPANJA I OGRANIČENJA | trenutna, provjerena lista (README §10 + [[odstupanja]] **provjereno prema kodu i 00_MAPA 16. 9.**); što bi bio sljedeći korak — samo ako je zapisan u projektu | README §10, `odstupanja.md`, `00_MAPA.md` | — |
-| 14 | `zakljucak.tex` | ZAKLJUČAK | što sustav radi (izmjereno), što ne, naučene lekcije zapisane u projektu | `00_MAPA.md`, P-45, `timeline.md` | — |
-| P | `prilog-a-pokretanje.tex` | PRILOG A: POKRETANJE | sažeto: preduvjeti, dohvat (`vcs import`, zakrpe), build, misija jednom naredbom, argumenti | README §1–7, `RUNNING.md` | — |
-| P | `prilog-b-kod.tex` | PRILOG B: IZVODI IZ KODA | **kodovi** (zahtjev profesora): izvodi s objašnjenjem i putanjom datoteke — vidi §5 | kod | — |
+| # | Datoteka | Poglavlje | ~str. | Sadržaj (obavezno, ništa ne preskočiti) | Glavni izvori | Slike |
+|---|---|---|---|---|---|---|
+| 1 | `01-uvod.tex` | UVOD | 1.5 | zadatak [ZAD] i konkretizacija iz [MAIL]; cilj misije; alati; zahtjevi R-01…R-20 u **jednoj kompaktnoj tablici** (zahtjev, izvor, gdje je riješen, status); pregled rada | `izvori.md`, `00_MAPA.md`, README uvod | G02 |
+| 2 | `02-arhitektura.tex` | ARHITEKTURA SUSTAVA | 3 | **nacrt arhitekture** (slojevi Gazebo ↔ `ros_gz_bridge`/`ign_ros2_control` ↔ controller_manager ↔ MoveIt/Nav2 ↔ vlastiti čvorovi); tablica čvorova (paket, čvor, odgovornost, glavni ulazi/izlazi); TF lanac; hijerarhija launch datoteka; struktura repozitorija i 4 vlastita paketa; vanjski paketi (`ros2.repos`, pinani commitovi, 2 zakrpe); projektno okruženje (`run_native.sh`) | `src/*/launch/*.py`, `setup.py`, `bridge.yaml`, `ros2.repos`, `patches/`, S-10, README §8–9 | G04, G05, G06 |
+| 3 | `03-model-i-okruzenje.tex` | MODEL ROBOTA I SIMULACIJSKO OKRUŽENJE | 3.5 | kompozicija `robot.urdf.xacro`; baza; torzo (STL B. Ćaran, montaža iz CAD mjera, hod, mase = procjena); 2× Gen3 + 2F-85; pan-tilt + D435; **tablica svih senzora** (tip, frekvencija, rezolucija/zrake, topic); DetachableJoint; poze ruku i izmjerene širine (tablica); svijet `seminar_world.sdf` (sobe, vrata, stolovi, kutija, markeri); `sim.launch.py` tijek u koracima | `robot.urdf.xacro`, `base/*.xacro`, `dual_arm_torso.urdf.xacro`, `postures.py`, S-01 (geometrija), `08_poze.md`, `seminar_world.sdf`, `sim.launch.py`, D-13, D-14 | G01, G08, K01, K02, K03, K04+K05 |
+| 4 | `04-upravljanje.tex` | UPRAVLJANJE (ros2_control) | 1.5 | tablica 8 kontrolera (tip, zglobovi, sučelja); `mecanum_drive_controller` parametri; `position` vs `effort`+PID profil (D-21); lanac naredbi baze (`/cmd_vel` → collision monitor → `cmd_vel_relay` → kontroler) | `controllers.yaml`, `force_controllers.yaml`, `cmd_vel_relay.py`, `collision_monitor.yaml`, D-21, P-09 | G09 |
+| 5 | `05-percepcija.tex` | PERCEPCIJA | 1.5 | `aruco_detector` (rječnik, veličina markera, PnP, izlazi); markeri kutije i stola; kamera glave i oblak točaka; kamere zapešća; mjerenje kutije i cross-check; `scan_filter`, `robot_extent`/`footprint_publisher` | `aruco_detector.py`, `main_task.py`, `scan_filter.py`, `robot_extent.py`, D-01, D-02, P-19, P-22 | K10+K12 (ili K11) |
+| 6 | `06-navigacija.tex` | MAPIRANJE I NAVIGACIJA | 3 | SLAM (`mapping.launch.py`, `slam_params.yaml`, rezolucija, gate-ovi karte); AMCL; Nav2 (planer, upravljač, costmapovi); `feature_registry` (vrata/stolovi iz karte); `nav_zones` potencijalno polje (D-20); `room_navigator` (graf soba, portalne i dock poze, gate ruku, `navigate_through_poses`); dinamički obris (D-19); collision monitor; `nav_gui`; `loc_error` | `nav2.launch.py`, `mapping.launch.py`, `nav2_params.yaml`, `slam_params.yaml`, `feature_registry.py`, `nav_zones.py`, `room_navigator.py`, `footprint_publisher.py`, `MAPPING.md`, D-16, D-19, D-20, P-39, P-40 | G10+G11, K08+K09 |
+| 7 | `07-manipulacija.tex` | MANIPULACIJA I DVORUČNI HVAT | 2.5 | MoveIt konfiguracija (SRDF grupe, kinematika, OMPL, kontroleri); zašto squeeze (85 mm vs 0.30 m); slijed STEP0–STEP7 iz koda (tablica: korak, što, provjera/abort); dokaz kontakta i attach; dizanje na vodilicama; gate-ovi poštenja | `pas_dual_arm_moveit_config/*`, `main_task.py` `run()`, `postures.py`, D-05, D-06, D-07, D-12, P-14, P-15, P-17 | K13–K17 (niz 2×2 ili 3+2) |
+| 8 | `08-misija.tex` | ORKESTRACIJA MISIJE | 2 | `mission.launch.py`; 8 misijskih koraka; start (`/mission/start`, gumb); vožnja preko `room_navigator`-a; nošenje kroz vrata (referentna poza, gate); **odlaganje na marker u 11 koraka** s provjerama; očekivani log | `mission.launch.py`, `task.launch.py`, `main_task.py`, P-45, `misija.md` | G12, K18, K20–K22 (niz), K23 |
+| 9 | `09-rezultati.tex` | REZULTATI, PROBLEMI I OGRANIČENJA | 2 | tablica izmjerenih rezultata (run 62, M1, M4, M5, `loc_error`, offline provjere); **tablica ključnih problema** (P-09, P-15, P-17, P-35/43, P-39, P-40, P-45, P-46: simptom → uzrok → rješenje, jedan red); trenutna provjerena ograničenja | `runovi.md`, P-kartice, README §10, `odstupanja.md` (provjeriti prema kodu) | — |
+| 10 | `zakljucak.tex` | ZAKLJUČAK | 0.5 | što radi (izmjereno), što ne, naučeno (samo zapisano u projektu) | `00_MAPA.md`, P-45, `timeline.md` | — |
+| A | `prilog-a-pokretanje.tex` | PRILOG A: POKRETANJE | ≤1 | preduvjeti, dohvat (`vcs import`, zakrpe), build, misija jednom naredbom | README §1–7, `RUNNING.md` | — |
+| B | `prilog-b-kod.tex` | PRILOG B: IZVODI IZ KODA | ≤4 | **kodovi** — vidi §5 | kod | — |
 
 ## 4. Slike
 
@@ -143,27 +143,26 @@ kopira u `docs/figures/` pod ciljnim imenom, a original ostaje u `snimke/`. ★ 
 
 ## 5. Kodovi (Prilog B)
 
-Izvodi (ne cijele datoteke), svaki s putanjom, rasponom redaka i 2–4 rečenice objašnjenja:
+Kratki izvodi (10–25 redaka), svaki s putanjom, rasponom redaka i 1–3 rečenice objašnjenja:
 `robot.urdf.xacro` (kontaktni senzor + DetachableJoint), `controllers.yaml` (`base_controller`),
 `mission.launch.py`, `main_task.py` (glavni slijed misije), `aruco_detector.py` (detekcija + PnP),
-`nav_zones.py` (potencijalno polje), `room_navigator.py` (gate ruku / portalne poze),
-`main_task.py` (`_place_on_marker` ili provjera `PLACE VERIFIED`), `run_native.sh`.
-Paket `listings`, jezici Python/XML/YAML/bash, hrvatski naslov „Ispis“.
+`nav_zones.py` (potencijalno polje), `room_navigator.py` (gate ruku), `main_task.py`
+(`PLACE VERIFIED` provjera). Paket `listings`, naslov „Ispis“. U tijelu rada se na ispise
+upućuje s `\ref`, kod se ne ponavlja u poglavljima.
 
 ## 6. Tijek rada i status
 
 - [x] Analiza projekta, plan (ovaj fajl), `STATE.md`, metapodaci u `project.yaml`
 - [x] Tectonic instaliran (`~/.local/bin/tectonic`)
-- [ ] `latex_architect`: predložak, naslovnica s 3 izvođača, **str. 2 GitHub + autori**, popisi
-      slika/tablica, `listings`, TikZ, makro za slike s rezervnim okvirom, stubovi poglavlja, build
-- [ ] Generirane slike G01–G12
-- [ ] `writer`: poglavlja 1–3 (uvod, zahtjevi, arhitektura)
-- [ ] `writer`: poglavlja 4–7 (model, okruženje, upravljanje, percepcija)
-- [ ] `writer`: poglavlja 8–10 (navigacija, manipulacija, misija)
-- [ ] `writer`: poglavlja 11–14 + prilozi (rezultati, problemi, ograničenja, zaključak, pokretanje, kod)
-- [ ] Build bez grešaka (`latex_surgeon` ako treba)
-- [ ] `qa_reviewer` → `docs/REVIEW.md` (posebno: svaka tvrdnja ima izvor u projektu)
+- [ ] `latex_architect`: predložak, naslovnica s 3 izvođača, **str. 2 GitHub + autori**, popisi,
+      `listings`, TikZ, makroi `\slika`/`\dvijeslike` s rezervnim okvirom, stubovi 10 poglavlja + 2 priloga, build
+- [ ] Generirane slike G03 (izbačeno — zahtjevi su tablica), G04–G12
+- [ ] `writer`: 1–3 (uvod, arhitektura, model i okruženje)
+- [ ] `writer`: 4–6 (upravljanje, percepcija, navigacija)
+- [ ] `writer`: 7–10 + prilozi (manipulacija, misija, rezultati, zaključak, pokretanje, kod)
+- [ ] Build bez grešaka, tijelo ≈ 20 str. (`latex_surgeon` ako treba)
+- [ ] `qa_reviewer` → `docs/REVIEW.md` (svaka tvrdnja ima izvor u projektu; ništa bitno preskočeno)
 - [ ] Ispravci po recenziji
-- [ ] Korisnik predao snimke K01–K26 → ubaciti, provjeriti opise
+- [ ] Korisnik predao snimke u `docs/figures/snimke/` → ubaciti, provjeriti opise
 - [ ] README: oba autora + link na `KxHartl/PAS-DUAL-ARM` (README u **tom** repou vidi profesor)
 - [ ] Finalni build `--version v1.0`

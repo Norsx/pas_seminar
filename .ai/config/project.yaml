@@ -17,7 +17,7 @@ professor_title: ""                       # empty: titles are part of each name 
 professor_name: "izv. prof. dr. sc. Marko Švaco; doc. dr. sc. Bojan Šekoranja; Branimir Ćaran, mag. ing. mech."  # course instructors (P, P, V); title page lists one per line
 
 # --- Build & page limit ---
-max_pages: 70                # build skripta upozorava ako PDF premašuje N stranica (detaljan seminar s puno slika)
+max_pages: 32                # build skripta upozorava ako PDF premašuje N stranica (tijelo ~20 + prednji dio + prilozi)
 dist_version: "dev"          # build piše PDF u dist/<dist_version>/ (npr. "v1.0" za predaju)
 
 # --- Opcijski popisi (latex_architect uključuje ako je true) ---
