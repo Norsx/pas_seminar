@@ -1,2 +1,126 @@
 \section{Mapiranje i navigacija}
 \label{sec:06-navigacija}
+
+% izvor: launch/nav2.launch.py; launch/mapping.launch.py; notes/01_zahtjevi/izvori.md:51-53
+Autonomno kretanje robota kroz prostor s trima sobama zahtijeva precizno mapiranje, pouzdanu
+lokalizaciju te planiranje putanja koje osigurava prolazak kroz uska sobna vrata širine $0{,}98$~m
+i siguran prilaz radnim stolovima. Navigacijski stog objedinjuje paket \texttt{slam\_toolbox}
+\cite{mail2026}, probabilističku lokalizaciju AMCL, okvir Nav2, jedinstveno potencijalno polje
+\texttt{nav\_zones} te čvor za vođenje među sobama \texttt{room\_navigator}.
+
+\subsection{Lasersko mapiranje (SLAM)}
+\label{sec:06-slam}
+
+% izvor: config/slam_params.yaml; launch/mapping.launch.py:1-65; notes/03_problemi/P-40
+Kartiranje okruženja provodi se u načinu rada \texttt{mapping.launch.py} pomoću paketa
+\texttt{slam\_toolbox}. Izvorna karta snimljena na rešetki rezolucije $0{,}05$~m i sa starim modelom
+lidara precjenjivala je debljinu zidova ($150$--$178$~mm) te smanjivala efektivni otvor vrata na
+$0{,}950$~m (problem P-40). Prijelazom na GPU lidar s 1080 zraka i finu rešetku rezolucije
+$\SI{0.02}{m}$ ($2$~cm) u \texttt{slam\_params.yaml} generirana je karta \texttt{seminar\_map}
+(slika~\ref{fig:karta-zone-a}). Geometrijska provjera skriptom \texttt{check\_map\_geometry.py}
+potvrdila je visoku točnost: širina obaju vrata iznosi točno $0{,}980$~m, devijacija osi prolaza je
+$0{,}0$~cm, a debljina zidova $120$~mm uz RMS valovitost lica zida $\le \SI{2.3}{mm}$. Time je bočni
+zazor robota sa sklopljenim rukama povećan s $4{,}8$ na $\SI{6.3}{cm}$ po strani.
+
+\subsection{Probabilistička lokalizacija (AMCL)}
+\label{sec:06-amcl}
+
+% izvor: config/nav2_params.yaml:35-125; notes/03_problemi/P-40; runovi.md run 62
+Lokalizacija na izrađenoj 2D karti povjerena je čvoru \texttt{amcl} unutar \texttt{nav2\_params.yaml}.
+Početna poza robota postavljena je u ishodište svijeta $(0, 0, 0)$, što odgovara koordinatama
+spawna u \texttt{mission.launch.py} te uklanja potrebu za ručnim zadavanjem početne procjene u
+RViz-u. Mjerni model zrake (\texttt{likelihood\_field}) podešen je za lidar visoke rezolucije.
+Kvaliteta lokalizacije verificirana je offline alatom \texttt{loc\_error.py} koji uspoređuje AMCL
+procjenu s apsolutnom pozom modela iz Gazeba: u testnom prolazu kroz oboja vrata (run~62) vršna
+pogreška položaja iznosila je $3{,}0$~cm duž osi $X$, $2{,}9$~cm duž osi $Y$ te $0{,}3^\circ$ u
+orijentaciji, bez akumuliranog drifta kroz višeminutni rad.
+
+\subsection{Navigacijski okvir Nav2}
+\label{sec:06-nav2}
+
+% izvor: config/nav2_params.yaml:130-380; launch/nav2.launch.py:75-160
+Planiranje i praćenje trajektorija izvodi stog Nav2. Globalni planer \texttt{NavfnPlanner}
+pronalazi optimalne rute na rešetki troškova, dok lokalni upravljač (\texttt{DWBController} ili
+\texttt{MPPIController}) generira brzinske naredbe baze uzimajući u obzir dinamička ograničenja
+akceleracije ($\SI{0.8}{m/s^2}$) i kutne brzine ($\SI{1.0}{rad/s}$). Brzinske reference prolaze
+kroz \texttt{velocity\_smoother} (40~Hz) prije slanja na \texttt{/cmd\_vel}.
+
+\subsection{Navigacijske zone i potencijalna polja (\texttt{nav\_zones.py})}
+\label{sec:06-zones}
+
+% izvor: nav_zones.py:1-40; notes/04_odluke/D-20_single_potential_field_costmap.md
+Standardni Nav2 planeri nastoje skratiti put sjekući zavoje, što dovodi do ulaska u vrata pod kutom.
+Za robota duljine $1{,}04$~m i širine $0{,}821$~m zakret od samo $14^\circ$ povećava efektivnu širinu
+zahvata na $1{,}09$~m, što dovodi do neizbježnog sudara s dovratnikom. Problem je riješen uvođenjem
+vlastitog čvora \texttt{nav\_zones.py} (odluka D-20).
+
+Umjesto višestrukih slojeva odbijanja oprečne semantike, čvor \texttt{nav\_zones} generira
+jedinstveno potencijalno polje (slika~\ref{fig:karta-zone-b}). Zidovi i prepreke okruženi su
+odbijajućom rampom širine $0{,}30$~m i vršnog troška 35, dok je standardni \texttt{inflation\_layer}
+u Nav2 ugašen. Privlačenje kroz vrata i prilaze stolovima izvedeno je kao brazde nulte cijene
+(\texttt{FREE = 0}). Oko svakog detektiranog prolaza čvor postavlja usmjeravajuće trake (vodilice)
+koje planeru oduzimaju mogućnost kosog prilaza:
+
+% izvor: src/pas_dual_arm_scripts/pas_dual_arm_scripts/nav_zones.py:95-117
+\begin{lstlisting}[style=code-python, caption={Generiranje usmjeravajućih traka za okomit prolaz kroz vrata (\texttt{nav\_zones.py}, redci 95--117)}, label={lst:nav-zones}]
+def _build_door_zones(self):
+    """Dvije vodilice po vratima koje ostavljaju traku tocne sirine otvora."""
+    length = self.params['chute_length']
+    thickness = self.params['chute_thickness']
+    for index, door in enumerate(self.doors):
+        cx, cy = door['x'], door['y']
+        half = door['width'] / 2.0 - self.params['lane_margin']
+        for side in (-1.0, 1.0):
+            near, far = half, half + thickness
+            if door['wall_axis'] == 'x':  # zid duz X, prolaz duz Y
+                self.rects.append(('door', index,
+                                   cx + side * near, cx + side * far,
+                                   cy - length, cy + length, KEEPOUT))
+            else:                         # zid duz Y, prolaz duz X
+                self.rects.append(('door', index,
+                                   cx - length, cx + length,
+                                   cy + side * near, cy + side * far, KEEPOUT))
+\end{lstlisting}
+
+\dvijeslike{g10_karta.png}{Karta prostora dobivena laserskim mapiranjem na rešetki $\SI{0.02}{m}$}%
+  {g11_zone.png}{Potencijalno polje: keepout (crveno), trake vrata (zeleno), poze (plavo/žuto)}%
+  {Prikaz SLAM karte i navigacijskih zona u paketu \texttt{pas\_dual\_arm\_scripts}}{karta-zone}
+
+\subsection{Vođenje među sobama (\texttt{room\_navigator.py})}
+\label{sec:06-room-navigator}
+
+% izvor: room_navigator.py:1-80, 290-330; notes/03_problemi/P-39; P-45
+Čvor \texttt{room\_navigator} upravlja kretanjem na razini topološkog grafa soba. Povezuje 11
+karakterističnih zaustavnih točaka: prilazne i izlazne portalne poze ispred vrata, točke čekanja u
+sobama te dock poze pred stolovima. Prijelazi se izvršavaju pozivom akcije
+\texttt{navigate\_through\_poses}.
+
+Prije svakog prolaska kroz vrata čvor aktivira zaštitni uvjet ruku (\texttt{arms\_ok}). Budući da
+pozicijsko sučelje uslijed gravitacijskog progiba može odstupati od zadane konfiguracije, čvor mjeri
+stvarni kut svakog od 14 zglobova ruku i uspoređuje ga s važećom referentnom pozom. Ako najveće
+odstupanje premašuje prag \texttt{arm\_tolerance} = $\SI{0.15}{rad}$, kretanje se obustavlja.
+Prilikom praznog hoda referenca je \texttt{DRIVE\_V4}, a nakon preuzimanja kocke referenca postaje
+\texttt{CARRY\_V4}.
+
+\subsection{Dinamički obris i sigurnosni nadzor}
+\label{sec:06-obris}
+
+% izvor: footprint_publisher.py:1-40; collision_monitor.yaml:1-60; cmd_vel_relay.py:1-70
+Budući da se tlocrtni gabariti robota mijenjaju s pokretima ruku i nošenjem tereta, čvor
+\texttt{footprint\_publisher.py} kontinuirano izračunava konveksnu ljusku robota i objavljuje
+poligon na temi \texttt{/footprint}. Između Nav2 izlaza i baze djeluje \texttt{collision\_monitor}
+koji iz laserskih mjerenja \texttt{/scan\_filtered} projicira sigurnosni poligon
+\texttt{FootprintApproach} $\SI{1.5}{s}$ unaprijed duž vektora brzine te zaustavlja bazu unutar zone
+\texttt{BaseStop} ($0{,}80 \times \SI{0.56}{m}$). Relej \texttt{cmd\_vel\_relay} osigurava da
+naredbe sa sigurnosnog monitora imaju apsolutni prioritet pred sirovim referencama.
+
+\subsection{Nadzorna ploča operatera (\texttt{nav\_gui.py})}
+\label{sec:06-gui}
+
+% izvor: nav_gui.py:1-180; notes/07_predaja/plan_seminara.md K09
+Za vizualni nadzor i upravljanje misijom razvijen je grafički panel \texttt{nav\_gui} temeljen na
+Python biblioteci Tkinter (slika~\ref{fig:nav-gui}). Panel prikazuje trenutni korak misije (1 do 8),
+naziv aktivne prostorije, telemetriju odometrije i status poslužitelja. Glavni gumb „MISIJA: po kutiju“ objavljuje poruku na \texttt{/mission/start}, čime operater odobrava
+početak autonomnog ciklusa nakon što su ruke sigurno sklopljene u transportnu pozu.
+
+\slika[0.55\textwidth]{k09_nav_gui.png}{Nadzorni grafički panel \texttt{nav\_gui} s telemetrijom i gumbom za pokretanje misije}{nav-gui}
