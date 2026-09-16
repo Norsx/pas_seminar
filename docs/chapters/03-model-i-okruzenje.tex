@@ -1,2 +1,161 @@
 \section{Model robota i simulacijsko okruženje}
 \label{sec:03-model-i-okruzenje}
+
+% izvor: urdf/robot.urdf.xacro:1-490; data/raw/zadatak/torzo_cad_mjere.png; notes/01_zahtjevi/izvori.md:32-40
+Simulacijski model robota objedinjuje kinematičke opise komercijalnih industrijskih komponenti i
+namjenski razvijenih konstrukcijskih sklopova unutar krovne datoteke \texttt{robot.urdf.xacro}.
+Cilj modeliranja bio je postići potpuno slaganje s CAD konceptom (slika~\ref{fig:torzo-cad}) i
+specifikacijom iz projektnog zadatka \cite{mail2026}.
+
+\subsection{Konstrukcija i komponente robota}
+\label{sec:03-konstrukcija}
+
+% izvor: urdf/base/base.urdf.xacro; urdf/base/wheel.urdf.xacro; notes/03_problemi/P-09
+Mobilna baza robota temelji se na platformi PAL Robotics omni\_base \cite{omnibase}. Baza je
+opremljena s četiri Mecanum kotača polumjera $r = \SI{0.0762}{m}$ postavljenih na međuosovinskom
+razmaku $2l_x = \SI{0.462}{m}$ i tragu kotača $2l_y = \SI{0.47315}{m}$. Kolizijska geometrija
+kotača aproksimirana je glatkim valjcima, dok je omnidirekcijsko kretanje ostvareno anizotropnim
+modelom trenja u DART simulatoru ($\mu = 0{,}80$, $\mu_2 = 0{,}20$, vektor trenja \texttt{fdir1} pod
+$\pm45^\circ$ u odnosu na uzdužnu os baze).
+
+\slika[0.55\textwidth]{g01_torzo_cad_mjere.png}{CAD model torza robota s ugrađenim linearnim vodilicama i kotama \cite{mail2026}}{torzo-cad}
+
+% izvor: src/dual_arm_torso/urdf/dual_arm_torso.urdf.xacro:1-85; notes/03_problemi/P-13
+Na gornju plohu baze montiran je torzo robota izrađen prema CAD modelu asistenta B. Ćarana
+\cite{mail2026} (slika~\ref{fig:torzo-cad}). Torzo nosi dvije vertikalne linearne vodilice koje
+pomiču klizače ruku preko prizmatičnih zglobova \texttt{torso\_left\_carriage\_joint} i
+\texttt{torso\_right\_carriage\_joint} u rasponu hoda od $0{,}05$ do $\SI{0.65}{m}$. Budući da
+dodatak \texttt{ign\_ros2\_control} na samom donjem graničniku ($0{,}05$~m) poništava izlaznu brzinu
+u oba smjera i trajno blokira gibanje (problem P-13), početni položaj klizača postavljen je na
+\texttt{initial\_value} = $\SI{0.06}{m}$, čime je osiguran pouzdan vertikalni hod pod teretom.
+Masa torza procijenjena je na $25$~kg, a masa svakog klizača na $5$~kg.
+
+% izvor: kortex_description/arms/gen3/7dof/urdf/gen3_macro.xacro; kortex.../robotiq_2f_85.xacro
+Na klizače su simetrično montirana dva 7-DOF industrijska manipulatora Kinova Gen3 \cite{kortex}.
+Svaka ruka ima kinematički doseg od $\approx \SI{0.90}{m}$, masu od $7{,}2$~kg i nominalnu
+nosivost od $2$~kg. Na završnim prirubnicama ruku nalaze se dvočeljusne električne hvataljke
+Robotiq 2F-85 s paralelnim hodom čeljusti do $\SI{85}{mm}$. Budući da je manipulacijska kocka znatno
+šira ($\SI{300}{mm}$) od maksimalnog raspona čeljusti, hvataljke u misiji ostaju zatvorene
+(\texttt{0.791} rad) te služe kao ravni potisni jastučići za dvoručni obuhvat.
+
+% izvor: pan_tilt_ros/urdf/pan_tilt.urdf.xacro; patches/pan_tilt_ros-...patch; robot.urdf.xacro
+Na vrhu središnjeg stupa torza nalazi se pan-tilt mehanizam \cite{pantilt} s dva zakretna stupnja
+slobode (\texttt{yaw} raspon $\pm \SI{1.57}{rad}$, \texttt{pitch} $-1{,}0$ do $+\SI{0.8}{rad}$) koji
+usmjerava primarnu RGB-D kameru Intel RealSense D435 \cite{realsense}.
+
+\subsection{Senzorski sustav}
+\label{sec:03-senzori}
+
+% izvor: robot.urdf.xacro:200-475; config/bridge.yaml:10-145; notes/00_MAPA.md
+Za potrebe autonomne navigacije, lokalizacije i precizne dvoručne manipulacije robot je opremljen
+bogatim skupom simuliranih senzora sažetih u tablici~\ref{tab:senzori}.
+
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setstretch{1.05}
+  \caption{Pregled senzorskih podsustava implementiranih u modelu robota}
+  \label{tab:senzori}
+  \begin{tabularx}{\textwidth}{@{}>{\bfseries}p{2.6cm}>{\raggedright\arraybackslash}p{2.8cm}cc>{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Senzor & Tip i lokacija & Frekv. & Rezolucija / Zrake & ROS~2 tema \\
+    \midrule
+    2D Lidar & \texttt{gpu\_lidar}, \texttt{laser\_link} & 25~Hz & 1080 zraka, $360^\circ$, 25~m & \texttt{/scan} $\rightarrow$ \texttt{/scan\_filtered} \\
+    Kamera glave & RGB-D D435, pan-tilt & 15~Hz & $1280\times720$ RGB, $640\times480$ D & \texttt{/camera/image}, \texttt{/camera/points} \\
+    Kamere zapešća & 2$\times$ RGB-D, šake ruku & 15~Hz & $640\times480$, HFOV $60^\circ$ & \texttt{/wrist\_left/*}, \texttt{/wrist\_right/*} \\
+    Kontaktni senzori & 4$\times$ na prstima & 50~Hz & binarni (DART) & \texttt{/contact/*\_tip} \\
+    FT senzori & 2$\times$ na šakama & 200~Hz & 6 DOF sila/moment & \texttt{/ft/*\_wrist} \\
+    Kruti spoj & \texttt{DetachableJoint} & --- & stanje spoja & \texttt{/aruco\_box/*} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+% izvor: robot.urdf.xacro:223-241; config/bridge.yaml:94-144; notes/03_problemi/P-42
+Laserski skener montiran je na prednjem dijelu baze na visini $\SI{0.209}{m}$. Primarna kamera na glavi
+služi za grubo lociranje kocke i ciljnog stola, dok dvije kamere na zapešćima omogućuju zatvaranje
+položajne petlje pri finom približavanju jastučića bočnim plohama kocke. Kontaktni senzori na
+vrhovima prstiju bilježe fizikalni dodir s plohom kocke, što predstavlja ključni preduvjet za
+aktivaciju dodatka \texttt{DetachableJoint} i sprječava lažno podizanje objekta (pravilo iskrenosti
+D-12).
+
+\subsection{Karakteristične radne poze ruku}
+\label{sec:03-poze}
+
+% izvor: src/pas_dual_arm_scripts/pas_dual_arm_scripts/postures.py:25-90; notes/08_poze.md; P-43
+Zbog širine vrata od $0{,}98$~m, kinematičke poze dviju ruku moraju biti pažljivo optimirane.
+U tablici~\ref{tab:poze} navedene su karakteristične konfiguracije zglobova definirane u modulu
+\texttt{postures.py}.
+
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setstretch{1.05}
+  \caption{Karakteristične radne poze ruku i izmjerene širine robota}
+  \label{tab:poze}
+  \begin{tabularx}{\textwidth}{@{}>{\bfseries}p{2.5cm}cc>{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Naziv poze & Vodilice & Širina & Funkcija i kinematičke značajke \\
+    \midrule
+    \texttt{ARM\_ZERO} & $0{,}06$~m & $2{,}280$~m & Ruke potpuno ispružene ustranu; stanje neposredno nakon spawna \\
+    \texttt{ARM\_HOME} & $0{,}06$~m & $1{,}410$~m & Standardno MoveIt početno stanje; preširoko za sobna vrata \\
+    \texttt{DRIVE\_V4} & $0{,}20$~m & $0{,}821$~m & Transportna poza sklopljenih ruku; $8$~cm zazora sa svake strane vrata \\
+    \texttt{DETECTION\_V4} & $0{,}40$~m & $0{,}850$~m & Položaj pred stolom; kamere zapešća poravnate s bočnim markerima \\
+    \texttt{GRASP\_V4} & $0{,}40$~m & $0{,}823$~m & Prihvat kocke pod kutom od $55^\circ$ prema dolje; jastučići $14$~mm od ploha \\
+    \texttt{CARRY\_V4} & $0{,}10$~m & $0{,}821$~m & Nošenje podignute kocke; privučena $15$~cm k torzu, laktovi zaokrenuti $20^\circ$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+% izvor: notes/03_problemi/P-43_grasp_pose_wider_than_door.md; postures.py:52-74
+Geometrija poze \texttt{GRASP\_V4} predstavlja ključni iskorak u odnosu na početne pokušaje: vodoravni
+prilaz kocki zbog kinematike sfernog zapešća rezultira minimalnom širinom ruku od $1{,}003$~m, što
+onemogućuje prolazak kroz vrata. Uvođenjem strmog nagiba zapešća od $55^\circ$ prema dolje širina
+je smanjena na $0{,}823$~m. U pozi \texttt{CARRY\_V4} kocka je privučena $\SI{15}{cm}$ prema torzu,
+čime je širina s teretom svedena na $0{,}821$~m, što kroz otvor vrata od $0{,}98$~m osigurava sigurnosni
+razmak od $\SI{8}{cm}$ sa svake strane.
+
+\subsection{Simulacijski svijet (\texttt{seminar\_world.sdf})}
+\label{sec:03-svijet}
+
+% izvor: seminar_world.sdf:1-210, 400-470; notes/04_odluke/D-13_three_room_world.md; D-14
+Simulacijsko okruženje modelirano je u datoteci \texttt{seminar\_world.sdf} prema odluci D-13 i
+zahtjevu [MAIL] \cite{mail2026} (slika~\ref{fig:tlocrt-svijeta} i slika~\ref{fig:gazebo-svijet}).
+Svijet se sastoji od tri prostorije tlocrtnih dimenzija $6 \times 6$~m raspoređene u obliku slova L:
+\begin{itemize}
+  \item \textbf{Početna soba (HOME, sivi pod)}: raspon $x \in [-3, 3]$~m, $y \in [-3, 3]$~m. Sadrži početnu točku robota u ishodištu $(0, 0, 0)$ usmjerenu duž osi $+X$.
+  \item \textbf{Soba preuzimanja (BLUE, plavi pod)}: raspon $x \in [-3, 3]$~m, $y \in [-9, -3]$~m. Povezana s HOME sobom prolazom na $y = -3$~m. Na poziciji $(0, -6{,}5)$ nalazi se četveronožni radni stol visine $0{,}75$~m ($0{,}80 \times 0{,}80 \times 0{,}04$~m ploča) na kojem leži manipulacijska kocka \texttt{aruco\_box} na koordinatama $(0, -6{,}35, 0{,}90)$~m.
+  \item \textbf{Ciljna soba (RED, crveni pod)}: raspon $x \in [3, 9]$~m, $y \in [-3, 3]$~m. Povezana s HOME sobom prolazom na $x = 3$~m. Na koordinatama $(6{,}5, 0)$ smješten je ciljni stol s ArUco markerom odlaganja ID~3.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \input{figures/tikz/tlocrt-svijeta}
+  \caption{Tlocrt simulacijskog svijeta \texttt{seminar\_world.sdf} s koordinatama i rasporedom soba}
+  \label{fig:tlocrt-svijeta}
+\end{figure}
+
+% izvor: seminar_world.sdf:118-125; notes/03_problemi/P-36; D-14; aruco.launch.py:60-75
+Pregradni zidovi debljine su $0{,}10$~m i visine $3{,}0$~m (povišeni s prvotnih $1{,}2$~m kako
+kamera na visini $1{,}39$~m ne bi gledala preko njih, problem P-36). Vrata su otvori širine $1{,}0$~m
+u modelu, što nakon laserskog skeniranja na rešetki karte daje čisti prolaz od $0{,}980$~m.
+Manipulacijska kocka je brida $0{,}30$~m i mase $0{,}30$~kg s ArUco markerima rječnika
+\texttt{DICT\_4X4\_50} (ID~0 na gornjoj plohi, ID~1 na lijevoj i ID~2 na desnoj bočnoj plohi).
+Ciljni marker na crvenom stolu (ID~3) ima dimenziju $0{,}36$~m (na podlozi od $0{,}40$~m), što je
+namjerno veće od kocke kako bi i nakon spuštanja rub markera ostao vidljiv kameri za verifikaciju.
+
+\slika[0.75\textwidth]{k03_gazebo_svijet.png}{Simulacijski svijet u Gazebo Fortress okruženju s tri sobe i robotom}{gazebo-svijet}
+
+\subsection{Slijed pokretanja simulacije (\texttt{sim.launch.py})}
+\label{sec:03-sim-launch}
+
+% izvor: launch/sim.launch.py:1-260; README.md §4
+Pokretanje simulacijskog podsustava provodi se putem skripte \texttt{sim.launch.py} u sljedećim
+precizno definiranim koracima:
+\begin{enumerate}
+  \item \textbf{Generiranje modela}: xacro procesor evaluira \texttt{robot.urdf.xacro} uz opcije konfiguracije (zadani profil ili profil \texttt{force\_grasp}).
+  \item \textbf{Pokretanje simulatora}: pokreće se \texttt{ign gazebo} sa svijetom \texttt{seminar\_world.sdf}, u grafičkom ili \texttt{headless} načinu rada.
+  \item \textbf{Stvaranje modela robota}: čvor \texttt{create} stvara entitet \texttt{dual\_arm\_robot} na zadanoj pozi (u misiji nulta poza AMCL-a $x=0, y=0, \text{yaw}=0$).
+  \item \textbf{Objavljivanje stanja robota}: pokreće se \texttt{robot\_state\_publisher} koji čita \texttt{/joint\_states} i gradi \texttt{/tf\_static}.
+  \item \textbf{Aktivacija mostova}: pokreće se \texttt{ros\_gz\_bridge} s preslikavanjima iz \texttt{bridge.yaml}.
+  \item \textbf{Učitavanje kontrolera}: osam pojedinačnih procesa \texttt{spawner} sekvencijalno podiže kontrolere unutar okvira \texttt{ros2\_control}.
+\end{enumerate}

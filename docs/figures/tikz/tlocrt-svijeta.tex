@@ -1,0 +1,70 @@
+% G08: Tlocrt simulacijskog svijeta seminar_world.sdf s tri sobe u obliku slova L
+% Izvori: seminar_world.sdf:1-210, 400-470; D-13; D-14
+\begin{tikzpicture}[
+  font=\scriptsize,
+  scale=0.75, transform shape,
+  room/.style={draw=black!70, very thick},
+  door/.style={draw=white, line width=4pt},
+  tbl/.style={draw=brown!60!black, fill=brown!25, thick},
+  lbl/.style={font=\tiny\bfseries, align=center}
+]
+
+  % 1. Sobe (podovi)
+  % HOME [-3, 3] x [-3, 3]
+  \fill[gray!15] (-3, -3) rectangle (3, 3);
+  % BLUE [-3, 3] x [-9, -3]
+  \fill[blue!10] (-3, -9) rectangle (3, -3);
+  % RED [3, 9] x [-3, 3]
+  \fill[red!10] (3, -3) rectangle (9, 3);
+
+  % Mrežne linije (mjerilo 1m)
+  \draw[step=1.0, gray!30, very thin] (-3.01, -9.01) grid (3.01, 3.01);
+  \draw[step=1.0, gray!30, very thin] (2.99, -3.01) grid (9.01, 3.01);
+
+  % 2. Zidovi (3m visine u simulaciji)
+  % Vanjski obod
+  \draw[room] (-3, -9) -- (3, -9) -- (3, -3) -- (9, -3) -- (9, 3) -- (-3, 3) -- cycle;
+  % Unutarnji pregradni zidovi s otvorima vrata (1.0 m)
+  % Zid HOME <-> BLUE (Y = -3, vrata X in [-0.5, 0.5])
+  \draw[room] (-3, -3) -- (-0.5, -3);
+  \draw[room] (0.5, -3) -- (3, -3);
+  \draw[green!60!black, line width=2pt, dotted] (-0.5, -3) -- node[above, font=\tiny] {vrata 0,98~m} (0.5, -3);
+
+  % Zid HOME <-> RED (X = 3, vrata Y in [-0.5, 0.5])
+  \draw[room] (3, -3) -- (3, -0.5);
+  \draw[room] (3, 0.5) -- (3, 3);
+  \draw[green!60!black, line width=2pt, dotted] (3, -0.5) -- node[right, font=\tiny] {vrata 0,98~m} (3, 0.5);
+
+  % 3. Objekti
+  % Robot početni položaj (0,0)
+  \draw[fill=black] (0,0) circle (4pt);
+  \draw[->, >=Stealth, thick] (0,0) -- (0.8, 0) node[right, font=\tiny] {start (0,0)};
+  \node[lbl] at (0, 0.6) {HOME SOBA\\(6 $\times$ 6~m)};
+
+  % Plava soba i stol s kockom
+  \node[lbl, text=blue!80!black] at (0, -4.5) {PLAVA SOBA\\(zona preuzimanja)};
+  \draw[tbl] (-0.4, -6.9) rectangle (0.4, -6.1);
+  \node[font=\tiny] at (0, -7.2) {stol $0{,}8 \times 0{,}8$~m};
+  % Kocka na stolu (0, -6.35)
+  \draw[fill=yellow!80!orange, draw=black] (-0.15, -6.50) rectangle (0.15, -6.20);
+  \node[font=\tiny\bfseries] at (0, -6.35) {kocka};
+
+  % Crvena soba i stol odlaganja
+  \node[lbl, text=red!80!black] at (5.0, 1.8) {CRVENA SOBA\\(zona odlaganja)};
+  \draw[tbl] (6.1, -0.4) rectangle (6.9, 0.4);
+  \node[font=\tiny] at (6.5, -0.7) {ciljni stol};
+  % Marker odlaganja na stolu (6.5, 0)
+  \draw[fill=white, draw=black] (6.32, -0.18) rectangle (6.68, 0.18);
+  \node[font=\tiny\bfseries] at (6.5, 0) {ID 3};
+
+  % Koordinatne osi
+  \draw[->, >=Stealth, very thick, blue!60!black] (-3.8, -9.5) -- (-2.3, -9.5) node[right] {$+X$ [m]};
+  \draw[->, >=Stealth, very thick, blue!60!black] (-3.8, -9.5) -- (-3.8, -8.0) node[above] {$+Y$ [m]};
+
+  % Kote soba
+  \draw[<->, >=Stealth] (-3, 3.4) -- node[above] {6{,}0~m} (3, 3.4);
+  \draw[<->, >=Stealth] (3, 3.4) -- node[above] {6{,}0~m} (9, 3.4);
+  \draw[<->, >=Stealth] (-3.4, -3) -- node[left] {6{,}0~m} (-3, 3);
+  \draw[<->, >=Stealth] (-3.4, -9) -- node[left] {6{,}0~m} (-3, -3);
+
+\end{tikzpicture}
